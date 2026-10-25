@@ -153,7 +153,9 @@ function log(h,delta,k){k=k||sel;S.days[k]=S.days[k]||{};
  else toast('Removed '+fmt(-delta)+' '+h.u,true);
  const hs=S.habits.filter(x=>sched(x,k));
  if(hs.length&&hs.every(x=>ok(x,k))&&!S.awards['all|'+k]){S.awards['all|'+k]=1;S.xp+=30;setTimeout(()=>toast('🎉 All goals done today! +30 XP',false),900)}
- vib(15);save();render()}
+ vib(15);save();render();if(h.rand)setTimeout(()=>sweepRand(true),4600)}
+function sweepRand(say){const t=today(),done=h=>h.t==='limit'?(h.start<t&&ok(h,h.start)):Object.keys(S.days).some(k=>k>=h.start&&k<=t&&S.days[k][h.id]&&ok(h,k)),gone=S.habits.filter(h=>h.rand&&done(h));
+ if(!gone.length)return;S.habits=S.habits.filter(h=>!gone.includes(h));save();if(!fp)render();if(say)toast('Cleared: '+gone.map(h=>h.i+' '+h.n).join(', '))}
 function doUndo(){if(!undo)return;const{hid,k,prev}=undo;if(prev)S.days[k][hid]=prev;else delete S.days[k][hid];undo=null;save();render();$('.toast')&&$('.toast').remove()}
 function toast(m,u){$('.toast')&&$('.toast').remove();const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.innerHTML='<span>'+m+'</span>'+(u?'<button>Undo</button>':'');document.body.appendChild(t);if(u)t.querySelector('button').onclick=typeof u==='function'?()=>{u();t.remove()}:doUndo;setTimeout(()=>t.remove(),4000)}
 function vib(n){if(!S.set.reduce&&navigator.vibrate)try{navigator.vibrate(n)}catch(e){}}
@@ -273,7 +275,7 @@ const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math
 window.randHabits=()=>{const have=new Set(S.habits.map(h=>h.n.trim().toLowerCase())),q=shuf(['easy','medium','hard']),ids=[];
  for(const c of shuf(CATS.map(x=>x[0]))){if(!q.length)break;const d=q[0],cand=POOL[c][d].filter(o=>!have.has(o[0].toLowerCase()));if(!cand.length)continue;q.shift();
   const o=cand[Math.floor(Math.random()*cand.length)],bin=o[2]==='binary',id='h'+Date.now()+Math.random().toString(36).slice(2,6);ids.push(id);have.add(o[0].toLowerCase());
-  S.habits.push({id,n:o[0],i:o[1],t:o[2],g:bin?1:o[3],u:bin?'':o[4],s:bin?1:o[5],c:CCOL[c],cat:c,days:[0,1,2,3,4,5,6],start:today()})}
+  S.habits.push({id,n:o[0],i:o[1],t:o[2],g:bin?1:o[3],u:bin?'':o[4],s:bin?1:o[5],c:CCOL[c],cat:c,days:[0,1,2,3,4,5,6],start:today(),rand:true})}
  if(!ids.length){toast('You already have all of the random ideas!');return}
  save();if(fp)leaveF();else render();
  toast('Added '+ids.length+' random habit'+(ids.length>1?'s':'')+' 🎲',()=>{S.habits=S.habits.filter(h=>!ids.includes(h.id));save();render()})};
@@ -320,6 +322,6 @@ function render(){document.documentElement.dataset.theme=S.set.theme==='auto'?''
 
 setInterval(()=>{const e=document.querySelector('.tm');if(e&&S.timer){const t=Math.floor((Date.now()-S.timer.start)/1000);e.textContent='⏹ '+Math.floor(t/60)+':'+String(t%60).padStart(2,'0')}},1000);
 addEventListener('contextmenu',e=>{if(!/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))e.preventDefault()});
-render();
+render();sweepRand();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script></body></html>
