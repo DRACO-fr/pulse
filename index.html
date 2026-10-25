@@ -98,6 +98,8 @@ input,select,textarea{-webkit-user-select:text;user-select:text}
 svg,button svg{pointer-events:none;-webkit-user-drag:none}
 main{min-height:100vh;min-height:100dvh}
 nav{z-index:40;isolation:isolate;transform:translateZ(0)}
+.inform nav{display:none}.inform main{padding-bottom:var(--s7)}.sheet{overscroll-behavior:contain}
+.fpage .card{padding:var(--s2) var(--s4) var(--s4)}.fpage h2{margin-top:var(--s5)}.btn.block{width:100%}
 nav button{transition:color .2s}nav button:active{transform:none}nav button:active .pi{transform:scale(.92)}
 .world svg{pointer-events:auto}.scene{border-radius:20px;overflow:hidden;line-height:0}.scene svg{width:100%;height:auto;display:block}.wcard{cursor:pointer}
 .ff{animation:ff 3s ease-in-out infinite}@keyframes ff{50%{transform:translate(8px,-10px);opacity:.2}}
@@ -123,7 +125,7 @@ const addD=(k,n)=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+n);retu
 const today=()=>dk(new Date());
 let S;try{S=JSON.parse(localStorage.getItem('pulse1'))}catch(e){}
 S=S||{habits:[],days:{},awards:{},xp:0,set:{sound:true,reduce:false,theme:'auto'}};
-let tab='home',undo=null,sel=today(),popId=null,enter=true,dir=0,busy=0;const PV={};
+let fp=null,fpPushed=false,tab='home',undo=null,sel=today(),popId=null,enter=true,dir=0,busy=0;const PV={};
 function save(){try{localStorage.setItem('pulse1',JSON.stringify(S))}catch(e){}}
 const sched=(h,k)=>!h.paused&&!h.archived&&k>=h.start&&h.days.includes(new Date(k+'T12:00:00').getDay());
 const val=(h,k)=>(S.days[k]&&S.days[k][h.id])?S.days[k][h.id].v:0;
@@ -153,7 +155,7 @@ function log(h,delta,k){k=k||sel;S.days[k]=S.days[k]||{};
  if(hs.length&&hs.every(x=>ok(x,k))&&!S.awards['all|'+k]){S.awards['all|'+k]=1;S.xp+=30;setTimeout(()=>toast('🎉 All goals done today! +30 XP',false),900)}
  vib(15);save();render()}
 function doUndo(){if(!undo)return;const{hid,k,prev}=undo;if(prev)S.days[k][hid]=prev;else delete S.days[k][hid];undo=null;save();render();$('.toast')&&$('.toast').remove()}
-function toast(m,u){$('.toast')&&$('.toast').remove();const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.innerHTML='<span>'+m+'</span>'+(u?'<button>Undo</button>':'');document.body.appendChild(t);if(u)t.querySelector('button').onclick=doUndo;setTimeout(()=>t.remove(),4000)}
+function toast(m,u){$('.toast')&&$('.toast').remove();const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.innerHTML='<span>'+m+'</span>'+(u?'<button>Undo</button>':'');document.body.appendChild(t);if(u)t.querySelector('button').onclick=typeof u==='function'?()=>{u();t.remove()}:doUndo;setTimeout(()=>t.remove(),4000)}
 function vib(n){if(!S.set.reduce&&navigator.vibrate)try{navigator.vibrate(n)}catch(e){}}
 function snd(){if(!S.set.sound)return;try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.frequency.value=660;o.frequency.linearRampToValueAtTime(990,c.currentTime+.12);g.gain.value=.05;g.gain.linearRampToValueAtTime(0,c.currentTime+.25);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.25)}catch(e){}}
 function celebrate(h){snd();vib([30,40,30]);if(S.set.reduce||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
@@ -225,10 +227,10 @@ function home(){const k=sel,hs=S.habits.filter(h=>sched(h,k)),pct=dayPct(k),L=lv
  const gr=g<12?'Good morning':g<18?'Good afternoon':'Good evening',left=hs.filter(x=>!ok(x,k)),dn=hs.filter(x=>ok(x,k)),P=Math.round((pct||0)*100),all=pct===1;
  let h=`<header class="row"><div class="sp"><div class="lbl">${new Date(k+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</div><h1>${gr}</h1></div><button class="chip" onclick="custW()" aria-label="Customise Today">⚙︎</button></header>`;
  h+=`<div class="seg" role="group" aria-label="Day">${[-2,-1,0].map(n=>{const d=addD(today(),n);return `<button class="${d===k?'on':''}" onclick="sel='${d}';render()">${n===0?'Today':n===-1?'Yesterday':DK[new Date(d+'T12:00:00').getDay()]}</button>`}).join('')}</div>`;
- if(!S.habits.length)return h+`<div class="card" style="text-align:center;padding:var(--s6) var(--s4)"><div style="font-size:52px">🌱</div><h3 style="margin-top:var(--s3)">Start your first habit</h3><p class="mut">Pick a starter or build your own. Nothing is added without you.</p><div class="chips" style="justify-content:center;margin-bottom:var(--s5)">${TPL.map((t,i)=>`<button class="chip" onclick="addTpl(${i})">${t.i} ${t.n}</button>`).join('')}</div><button class="btn" onclick="openNew()">Create your first habit</button></div>`;
+ if(!S.habits.length)return h+`<div class="card" style="text-align:center;padding:var(--s6) var(--s4)"><div style="font-size:52px">🌱</div><h3 style="margin-top:var(--s3)">Start your first habit</h3><p class="mut">Pick a starter or build your own. Nothing is added without you.</p><div class="chips" style="justify-content:center;margin-bottom:var(--s5)">${TPL.map((t,i)=>`<button class="chip" onclick="addTpl(${i})">${t.i} ${t.n}</button>`).join('')}</div><button class="btn" onclick="openNew()">Create your first habit</button><div style="margin-top:var(--s3)"><button class="btn ghost" onclick="randHabits()">🎲 Surprise me with 3</button></div></div>`;
  const st=(r,l)=>`<div class="stat">${r}<span class="lbl">${l}</span></div>`;
  const hero=`<div class="card hero2">${ring(pct||0,176,P+'%',14,'main',P)}<div class="msg"><b>${all?'All goals complete 🎉':pct===null?'Rest day':'Today\'s progress'}</b><span class="mut">${all?'Wonderful work today.':pct===null?'Nothing scheduled. This isn\'t a miss.':'Every bit counts.'}</span></div><div class="stats">${st(ring(hs.length?dn.length/hs.length:0,64,dn.length+'/'+hs.length,7,'s1'),'Done')}${st(ring(Math.min(1,allStreak()/7),64,String(allStreak()),7,'s2'),'Streak')}${st(ring(L.p,64,'L'+(L.l+1),7,'s3'),LV[L.l].split(' ')[0])}</div></div>`;
- const list=!hs.length?'':`<div class="sech"><span class="lbl">To do · ${left.length}</span><button class="btn sm" onclick="openNew()">+ New</button></div>${left.map(card).join('')||'<p class="mut">All done for now.</p>'}${dn.length?`<div class="sec lbl">Done · ${dn.length}</div>${dn.map(card).join('')}`:''}`;
+ const list=!hs.length?'':`<div class="sech"><span class="lbl">To do · ${left.length}</span><span class="row" style="gap:var(--s2)"><button class="btn sm ghost" onclick="randHabits()">🎲 Surprise me</button><button class="btn sm" onclick="openNew()">+ New</button></span></div>${left.map(card).join('')||'<p class="mut">All done for now.</p>'}${dn.length?`<div class="sec lbl">Done · ${dn.length}</div>${dn.map(card).join('')}`:''}`;
  const W={hero:()=>hero,habits:()=>list,quest:questW,streaks:streakW,world:()=>`<div class="card wcard" onclick="go('world')"><div class="scene">${scene()}</div><div class="row" style="margin-top:var(--s3)"><div class="sp ttl" style="font-size:15px">Your world</div><span class="mut">Open ›</span></div></div>`};
  h+=wid().map(id=>W[id]()).join('');
  return h}
@@ -260,24 +262,44 @@ window.exp=f=>{if(f==='csv'){let c='date,habit,value,unit,target\n';Object.keys(
 window.imp=f=>{if(!f)return;f.text().then(t=>{try{const d=JSON.parse(t);if(!Array.isArray(d.habits)||typeof d.days!=='object')throw 0;if(confirm('Replace current data with this backup?')){S=Object.assign({awards:{},xp:0,set:S.set},d);save();render()}}catch(e){alert('Not a valid Pulse backup.')}})};
 window.wipe=()=>{if(confirm('Permanently delete all habits, history and XP?')){S={habits:[],days:{},awards:{},xp:0,set:S.set};save();render()}};
 window.addTpl=i=>{const t=TPL[i];S.habits.push({id:'h'+Date.now()+Math.random().toString(36).slice(2,5),n:t.n,i:t.i,t:t.t,g:t.g,u:t.u,s:t.s,c:t.c,viz:t.viz,cat:t.cat,days:[0,1,2,3,4,5,6],start:today()});save();render()};
-window.openNew=id=>{const e=id?H(id):null,x=e||{n:'',i:'⭐',t:'amount',g:1,u:'',s:1,c:'#8fd400',days:[0,1,2,3,4,5,6]};
- $('#ov').innerHTML=`<div class="modal" onclick="if(event.target===this)closeM()"><div class="sheet" role="dialog" aria-label="Habit"><h3>${e?'Edit':'New'} habit</h3>
- ${e?'':`<div class="chips">${TPL.map((t,i)=>`<button class="chip" onclick="fill(${i})">${t.i} ${t.n}</button>`).join('')}</div>`}
+const POOL={
+health:{easy:[['Eat a fruit','🍎','binary'],['Take a vitamin','💊','binary']],medium:[['Eat veggies','🥦','amount',3,'servings',1],['Drink water','🥤','amount',2,'L',.25]],hard:[['Hydration goal','🚰','amount',3,'L',.25],['Cap sugary drinks','🧃','limit',1,'cans',1]]},
+learning:{easy:[['Review notes','📝','amount',10,'min',5],['Read a few pages','📖','amount',5,'pages',5]],medium:[['Maths practice','➗','amount',30,'min',10],['Read pages','📚','amount',20,'pages',5]],hard:[['Deep focus study','🎓','amount',90,'min',30],['Past paper practice','📄','amount',1,'paper',1]]},
+fitness:{easy:[['Stretch','🤸','amount',5,'min',5],['Short walk','🚶','amount',2,'km',1]],medium:[['Go for a walk','🥾','amount',4,'km',1],['Workout','💪','amount',30,'min',10]],hard:[['Gym session','🏋️','amount',60,'min',15],['Go for a run','🏃','amount',5,'km',1]]},
+rest:{easy:[['Deep breathing','🌬️','amount',3,'min',1],['Lights out on time','🌙','binary']],medium:[['Wind-down time','🕯️','amount',20,'min',5],['In bed by 10pm','🛌','binary']],hard:[['Phone limit','📵','limit',1,'hours',.5],['Screen-free evening','🌆','amount',2,'hours',.5]]},
+other:{easy:[['Tidy your desk','🧹','binary'],['Write one line in a journal','✍️','binary']],medium:[['Journal','📓','amount',10,'min',5],['Learn something new','💡','amount',20,'min',5]],hard:[['Declutter a space','📦','amount',30,'min',10],['Practice a skill','🎯','amount',45,'min',15]]}};
+const CCOL={health:'#8fd400',learning:'#ff9f43',fitness:'#ff6b57',rest:'#8b7bff',other:'#00b8b0'};
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+window.randHabits=()=>{const have=new Set(S.habits.map(h=>h.n.trim().toLowerCase())),q=shuf(['easy','medium','hard']),ids=[];
+ for(const c of shuf(CATS.map(x=>x[0]))){if(!q.length)break;const d=q[0],cand=POOL[c][d].filter(o=>!have.has(o[0].toLowerCase()));if(!cand.length)continue;q.shift();
+  const o=cand[Math.floor(Math.random()*cand.length)],bin=o[2]==='binary',id='h'+Date.now()+Math.random().toString(36).slice(2,6);ids.push(id);have.add(o[0].toLowerCase());
+  S.habits.push({id,n:o[0],i:o[1],t:o[2],g:bin?1:o[3],u:bin?'':o[4],s:bin?1:o[5],c:CCOL[c],cat:c,days:[0,1,2,3,4,5,6],start:today()})}
+ if(!ids.length){toast('You already have all of the random ideas!');return}
+ save();if(fp)leaveF();else render();
+ toast('Added '+ids.length+' random habit'+(ids.length>1?'s':'')+' 🎲',()=>{S.habits=S.habits.filter(h=>!ids.includes(h.id));save();render()})};
+window.openNew=id=>{if(id&&!H(id))return;fp={id:id||''};enter=true;dir=1;try{history.pushState({f:1},'');fpPushed=true}catch(e){}scrollTo(0,0);render()};
+window.leaveF=()=>{fp=null;enter=true;dir=-1;render();scrollTo(0,0);if(fpPushed){fpPushed=false;try{history.back()}catch(e){}}};
+window.closeF=()=>leaveF();
+addEventListener('popstate',()=>{fpPushed=false;if(fp){fp=null;enter=true;dir=-1;render();scrollTo(0,0)}});
+function formView(){const id=fp.id,e=id?H(id):null,x=e||{n:'',i:'⭐',t:'amount',g:1,u:'',s:1,c:'#8fd400',days:[0,1,2,3,4,5,6]};
+ return `<div class="fpage"><div class="row" style="margin-bottom:var(--s3)"><button class="chip" onclick="closeF()" aria-label="Back">‹ Back</button></div><h1>${e?'Edit':'New'} habit</h1>
+ ${e?'':`<h2>Quick start</h2><div class="chips">${TPL.map((t,i)=>`<button class="chip" onclick="fill(${i})">${t.i} ${t.n}</button>`).join('')}</div><div style="margin-top:var(--s3)"><button class="btn ghost sm" onclick="randHabits()">🎲 Surprise me: add 3 random habits</button></div>`}
+ <h2>Details</h2><div class="card">
  <label>Name</label><input id="fn" maxlength="40" value="${esc(x.n)}" placeholder="e.g. Drink water">
  <div class="row"><div class="sp"><label>Icon (emoji)</label><input id="fi" maxlength="4" value="${x.i}"></div><div class="sp"><label>Colour</label><input id="fc" type="color" value="${x.c}"></div></div>
  <label>Tracking</label><select id="ft"><option value="amount" ${x.t==='amount'?'selected':''}>Reach a target amount</option><option value="binary" ${x.t==='binary'?'selected':''}>Done / not done</option><option value="limit" ${x.t==='limit'?'selected':''}>Stay below a maximum</option></select>
  <div class="row"><div class="sp"><label>Target</label><input id="fg" type="number" step="any" min="0" value="${x.g}"></div><div class="sp"><label>Unit</label><input id="fu" maxlength="12" value="${esc(x.u)}" placeholder="L, km, min…"></div><div class="sp"><label>Quick step</label><input id="fs" type="number" step="any" min="0" value="${x.s}"></div></div>
- <label>Category</label><select id="fcat">${CATS.map(c=>`<option value="${c[0]}" ${(x.cat||'health')===c[0]?'selected':''}>${c[1]}</option>`).join('')}</select><label>Days</label><div class="chips">${DK.map((d,i)=>`<button class="chip ${x.days.includes(i)?'on':''}" data-d="${i}" onclick="this.classList.toggle('on')">${d}</button>`).join('')}</div>
- <p id="fe" style="color:var(--coral)"></p><div class="row"><button class="btn ghost sp" onclick="closeM()">Cancel</button><button class="btn sp" onclick="saveH('${id||''}')">Save</button></div></div></div>`;$('#fn').focus()};
+ <label>Category</label><select id="fcat">${CATS.map(c=>`<option value="${c[0]}" ${(x.cat||'health')===c[0]?'selected':''}>${c[1]}</option>`).join('')}</select><label>Days</label><div class="chips">${DK.map((d,i)=>`<button class="chip ${x.days.includes(i)?'on':''}" data-d="${i}" onclick="this.classList.toggle('on')">${d}</button>`).join('')}</div></div>
+ <p id="fe" style="color:var(--coral)"></p><div class="row"><button class="btn ghost sp" onclick="closeF()">Cancel</button><button class="btn sp" onclick="saveH('${id||''}')">Save</button></div></div>`}
 window.fill=i=>{const t=TPL[i];fn.value=t.n;fi.value=t.i;fc.value=t.c;ft.value=t.t;fg.value=t.g;fu.value=t.u;fcat.value=t.cat;fs.value=t.s;window._viz=t.viz};
 window.closeM=()=>$('#ov').innerHTML='';
-window.saveH=id=>{const n=fn.value.trim(),g=parseFloat(fg.value),s=parseFloat(fs.value),t=ft.value,d=[...document.querySelectorAll('.sheet [data-d].on')].map(b=>+b.dataset.d);
+window.saveH=id=>{const n=fn.value.trim(),g=parseFloat(fg.value),s=parseFloat(fs.value),t=ft.value,d=[...document.querySelectorAll('.fpage [data-d].on')].map(b=>+b.dataset.d);
  const err=!n?'Give your habit a name.':(t!=='binary'&&!(g>0))?'Target must be a number above 0.':(t!=='binary'&&!(s>0))?'Quick step must be above 0.':!d.length?'Pick at least one day.':'';
  if(err){fe.textContent=err;return}
  const o={n,i:fi.value||'⭐',c:fc.value,t,g:t==='binary'?1:r3(g),s:t==='binary'?1:r3(s),u:fu.value.trim(),cat:fcat.value,days:d};
  if(id){const h=H(id);if(h.g!==o.g)toast('Target changed — past days keep their old targets.',false);Object.assign(h,o)}
  else S.habits.push({id:'h'+Date.now()+Math.random().toString(36).slice(2,5),start:today(),viz:window._viz&&/water/i.test(n)?window._viz:undefined,...o});
- window._viz=0;save();closeM();render()};
+ window._viz=0;save();leaveF()};
 const NAV=[['home','<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>','Today'],['world','<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>','World'],['insights','<svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>','Insights'],['me','<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>','You']];
 function post(){requestAnimationFrame(()=>requestAnimationFrame(()=>{
  document.querySelectorAll('[data-w]').forEach(e=>e.style.width=e.dataset.w+'%');
@@ -291,7 +313,7 @@ function go(t){if(t===tab||busy)return;const ix=x=>NAV.findIndex(n=>n[0]===x),d=
  navUI(t);if(S.set.reduce||matchMedia('(prefers-reduced-motion:reduce)').matches){sw();return}
  busy=1;a.className=d>0?'outL':'outR';setTimeout(sw,160)}
 function render(){document.documentElement.dataset.theme=S.set.theme==='auto'?'':S.set.theme;document.body.classList.toggle('rm',S.set.reduce);
- const v={home,world,insights,me}[tab]();const a=$('#app');a.className=enter?'enter'+(dir>0?' inR':dir<0?' inL':''):'';enter=false;dir=0;a.innerHTML=v;
+ document.body.classList.toggle('inform',!!fp);const v=fp?formView():{home,world,insights,me}[tab]();const a=$('#app');a.className=enter?'enter'+(dir>0?' inR':dir<0?' inL':''):'';enter=false;dir=0;a.innerHTML=v;
  let n=$('nav');if(!n){n=document.createElement('nav');n.setAttribute('aria-label','Main');n.innerHTML='<div><span class="ind"><i></i></span>'+NAV.map(t=>`<button onclick="go('${t[0]}')"><span class="pi">${t[1]}</span>${t[2]}</button>`).join('')+'</div>';document.body.appendChild(n)}
  navUI();
  post();if(popId)setTimeout(()=>popId=null,900)}
