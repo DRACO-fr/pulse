@@ -38,4 +38,4 @@ When you change any cached file, bump `VERSION` in `sw.js` so users get the new 
 - `index.html` - the whole app (HTML, CSS, JS)
 - `manifest.webmanifest` - install metadata
 - `sw.js` - offline cache
-- `icons/` - SVG, 192/512 PNG, maskable 512, Apple touch icon, favicon
+- `icon-192.png`, `icon-512.png`, `maskable-512.png`, `apple-touch-icon.png`, `favicon-32.png` - icons (all in the repo root)
