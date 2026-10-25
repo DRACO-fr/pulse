@@ -71,8 +71,8 @@ nav button.on{color:var(--tx)}nav button.on .pi{color:var(--ac);transform:scale(
 .ind i{display:block;width:56px;height:30px;border-radius:15px;background:var(--tint)}
 #app.inR{animation:inR .5s var(--out) both}#app.inL{animation:inL .5s var(--out) both}
 #app.outL{animation:outL .16s cubic-bezier(.4,0,1,1) both}#app.outR{animation:outR .16s cubic-bezier(.4,0,1,1) both}
-@keyframes inR{from{opacity:0;transform:translateX(40px)}}@keyframes inL{from{opacity:0;transform:translateX(-40px)}}
-@keyframes outL{to{opacity:0;transform:translateX(-32px)}}@keyframes outR{to{opacity:0;transform:translateX(32px)}}
+@keyframes inR{from{opacity:0}}@keyframes inL{from{opacity:0}}
+@keyframes outL{to{opacity:0}}@keyframes outR{to{opacity:0}}
 nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .enter>*{animation:rise .45s var(--out) both}
 .enter>:nth-child(n+2){animation-delay:50ms}.enter>:nth-child(n+4){animation-delay:100ms}.enter>:nth-child(n+6){animation-delay:150ms}
@@ -97,9 +97,8 @@ html,body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;o
 input,select,textarea{-webkit-user-select:text;user-select:text}
 svg,button svg{pointer-events:none;-webkit-user-drag:none}
 main{min-height:100vh;min-height:100dvh}
-nav{transform:translateZ(0);backface-visibility:hidden;will-change:transform}
+nav{z-index:40;isolation:isolate;transform:translateZ(0)}
 nav button{transition:color .2s}nav button:active{transform:none}nav button:active .pi{transform:scale(.92)}
-#app{backface-visibility:hidden}
 .world svg{pointer-events:auto}.scene{border-radius:20px;overflow:hidden;line-height:0}.scene svg{width:100%;height:auto;display:block}.wcard{cursor:pointer}
 .ff{animation:ff 3s ease-in-out infinite}@keyframes ff{50%{transform:translate(8px,-10px);opacity:.2}}
 .fall{animation:fall 7s linear infinite}@keyframes fall{from{transform:translateY(-10px)}to{transform:translateY(190px)}}
@@ -288,7 +287,7 @@ function post(){requestAnimationFrame(()=>requestAnimationFrame(()=>{
  document.querySelectorAll('[data-n]').forEach(e=>{const f=+e.dataset.f,t=+e.dataset.n,sf=e.dataset.s||'';if(f===t||rm){e.textContent=t+sf;return}const t0=performance.now();(function st(now){const p=Math.min(1,(now-t0)/600),q=1-Math.pow(1-p,3);e.textContent=Math.round(f+(t-f)*q)+sf;if(p<1)requestAnimationFrame(st)})(t0)})}))}
 function navUI(t){t=t||tab;const n=$('nav'),i=NAV.findIndex(x=>x[0]===t);n.firstChild.style.setProperty('--i',i);n.firstChild.style.setProperty('--n',NAV.length);[...n.querySelectorAll('button')].forEach((b,j)=>{b.classList.toggle('on',j===i);b.setAttribute('aria-current',j===i?'page':'false')})}
 function go(t){if(t===tab||busy)return;const ix=x=>NAV.findIndex(n=>n[0]===x),d=ix(t)>ix(tab)?1:-1,a=$('#app');
- const sw=()=>{tab=t;enter=true;dir=d;render();scrollTo(0,0);busy=0};
+ const sw=()=>{tab=t;enter=true;dir=d;scrollTo(0,0);render();busy=0};
  navUI(t);if(S.set.reduce||matchMedia('(prefers-reduced-motion:reduce)').matches){sw();return}
  busy=1;a.className=d>0?'outL':'outR';setTimeout(sw,160)}
 function render(){document.documentElement.dataset.theme=S.set.theme==='auto'?'':S.set.theme;document.body.classList.toggle('rm',S.set.reduce);
