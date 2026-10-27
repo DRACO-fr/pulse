@@ -2305,7 +2305,30 @@ window.QLCov = (function(){
     const pos = (key.length + u.text.length) % (d.length + 1), opts = d.slice(); opts.splice(pos, 0, key);
     return { t:"fb", q, o:opts, a:pos, e:u.text };
   }
-  return { tokens, units, missing, localQuestion, WORD };
+  // Lessons added by the audits / sweeps (flagged x) are moved into the unit of their own section that fits them, in notes order.
+  function place(courseUnits, chunks){
+    const lt = l => tokens(l.title + " " + l.qs.map(q => q.q + " " + (q.o||[]).join(" ") + " " + (q.e||"")).join(" "));
+    chunks.forEach(src => {
+      const us = units(src), mine = courseUnits.filter(u => u._source === src); if(!us.length || !mine.length) return;
+      const posOf = tk => { let best = -1, bl = 0; us.forEach(u => { let h = 0; u.tk.forEach(w => { if(tk.has(w)) h++; }); const sc = h / u.tk.size; if(sc > best){ best = sc; bl = u.line; } }); return bl; };
+      const extras = [];
+      mine.forEach(u => { u.lessons = u.lessons.filter(l => { if(l.x){ extras.push(l); return false; } return true; }); });
+      if(!extras.length) return;
+      const hosts = mine.filter(u => u.lessons.length);
+      if(!hosts.length){ mine[0].lessons.push(...extras); return; }
+      const info = hosts.map(u => { const ps = u.lessons.map(l => posOf(lt(l))), prof = new Set(tokens(u.title)); u.lessons.forEach(l => lt(l).forEach(w => prof.add(w))); return { u, ps, lo:Math.min(...ps), hi:Math.max(...ps), prof }; });
+      extras.forEach(l => {
+        const tk = lt(l), p = posOf(tk); let best = null, bd = Infinity, bs = -1;
+        info.forEach(h => {
+          const d = p < h.lo ? h.lo - p : p > h.hi ? p - h.hi : 0; let sc = 0; tk.forEach(w => { if(h.prof.has(w)) sc++; }); sc /= Math.sqrt(h.prof.size || 1);
+          if(d < bd || (d === bd && sc > bs)){ best = h; bd = d; bs = sc; }
+        });
+        let i = best.ps.findIndex(x => x > p); if(i < 0) i = best.u.lessons.length;
+        best.u.lessons.splice(i, 0, l); best.ps.splice(i, 0, p);
+      });
+    });
+  }
+  return { tokens, units, missing, localQuestion, place, WORD };
 })();
 // files = [{ dataUrl }] (JPEG data URLs from filesToImages)
 async function gemini(prompt, files, options={}){
@@ -4429,7 +4452,7 @@ ${sourceChunks[ci]}`;
       const missing=parseArray(auditRaw,"missing");
       const target=related[0];
       if(missing.length){
-        const extras=missing.filter(l=>l&&typeof l.title==="string"&&l.title.trim()).map(l=>({title:l.title.trim(),focus:typeof l.focus==="string"?l.focus.trim():"Cover all source details identified in this coverage audit."}));
+        const extras=missing.filter(l=>l&&typeof l.title==="string"&&l.title.trim()).map(l=>({title:l.title.trim(),focus:typeof l.focus==="string"?l.focus.trim():"Cover all source details identified in this coverage audit.",x:1}));
         if(extras.length){
           if(target) target.lessons.push(...extras);
           else plan.push({title:`Additional details — section ${ci+1}`,lessons:extras,source:sourceChunks[ci]});
@@ -4466,7 +4489,7 @@ ${sourceChunks[ci]}`;
           let got=byTitle.get(wanted.title.toLowerCase())||ls.find(x=>x&&typeof x.title==="string"&&x.title.trim().toLowerCase().includes(wanted.title.toLowerCase()))||null;
           if(!got||!Array.isArray(got.qs))continue;
           const qs=got.qs.filter(validCourseQuestion);
-          if(qs.length)good.push({title:wanted.title,qs});
+          if(qs.length)good.push({title:wanted.title,qs,x:wanted.x});
         }
         // One targeted repair request for any missing/invalid lesson in this batch.
         const missing=b.lessons.filter(w=>!good.some(g=>g.title===w.title));
@@ -4474,7 +4497,7 @@ ${sourceChunks[ci]}`;
           const rp=`Return ONLY valid JSON {"lessons":[{"title":"Exact lesson title","qs":[{"t":"mc","q":"Visible question?","o":["A","B","C"],"a":0,"e":"Explanation"}]}]}. Repair and generate complete question sets for these missing lessons only. Include at least 8 distinct questions per lesson (more if the focus holds many facts), all with visible q text; valid mc/tf/fb types and correct answer formats; fb q must contain ____. Use only these notes.\nMISSING LESSONS:\n${missing.map(l=>l.title+(l.focus?" — "+l.focus:"")).join("\n")}\nNOTES:\n${b.source}`;
           try{
             const rr=parseArray(await askWithRetry(rp,`Repairing batch ${bi+1}`),"lessons");
-            for(const wanted of missing){const got=rr.find(x=>x&&typeof x.title==="string"&&x.title.trim().toLowerCase()===wanted.title.toLowerCase());if(got&&Array.isArray(got.qs)){const qs=got.qs.filter(validCourseQuestion);if(qs.length)good.push({title:wanted.title,qs})}}
+            for(const wanted of missing){const got=rr.find(x=>x&&typeof x.title==="string"&&x.title.trim().toLowerCase()===wanted.title.toLowerCase());if(got&&Array.isArray(got.qs)){const qs=got.qs.filter(validCourseQuestion);if(qs.length)good.push({title:wanted.title,qs,x:wanted.x})}}
           }catch(re){if(stop)return;}
         }
         const ordered=b.lessons.map(w=>good.find(g=>g.title===w.title)).filter(Boolean);
@@ -4535,7 +4558,7 @@ ${source}`;
             if(!got||!Array.isArray(got.qs))throw new Error(`Coverage repair failed for "${wanted.title}". The course is not complete yet.`);
             const qs=got.qs.filter(validCourseQuestion);
             if(!qs.length)throw new Error(`Coverage repair returned no valid questions for "${wanted.title}".`);
-            target.lessons.push({title:wanted.title.trim(),qs});
+            target.lessons.push({title:wanted.title.trim(),qs,x:1});
           }
         }
       }
@@ -4569,7 +4592,7 @@ ${source}`;
           for(const x of part){
             const g=got.find(y=>y&&typeof y.title==="string"&&y.title.trim().toLowerCase()===x.title.toLowerCase());
             const qs=g&&Array.isArray(g.qs)?g.qs.filter(validCourseQuestion):[];
-            if(qs.length)target.lessons.push({title:x.title,qs});
+            if(qs.length)target.lessons.push({title:x.title,qs,x:1});
           }
         }
         miss=window.QLCov.missing(us,lessonSets(),0.5);
@@ -4577,14 +4600,15 @@ ${source}`;
           const pool=[...new Set((source.match(window.QLCov.WORD)||[]).filter(w=>w.length>=4))];
           for(let i=0;i<miss.length;i+=10){
             const grp=miss.slice(i,i+10),qs=grp.map(u=>window.QLCov.localQuestion(u,pool)).filter(validCourseQuestion);
-            if(qs.length)target.lessons.push({title:uniqueTitle(firstWords(grp[0].text,6)),qs});
+            if(qs.length)target.lessons.push({title:uniqueTitle(firstWords(grp[0].text,6)),qs,x:1});
           }
         }
       }
       failed=[];swept=true;   // anything a failed batch left out has now been covered by the sweep
     }catch(sweepErr){ if(stop)return; }
     if(stop)return;
-    activeCourse.units=activeCourse.units.filter(u=>u.lessons.length).map(({title,lessons})=>({title,lessons}));
+    try{window.QLCov.place(activeCourse.units,sourceChunks)}catch(placeErr){}   // put every extra lesson in the right section, in notes order
+    activeCourse.units=activeCourse.units.filter(u=>u.lessons.length).map(({title,lessons})=>({title,lessons:lessons.map(({title,qs})=>({title,qs}))}));
 
     const lessonCount=activeCourse.units.reduce((n,u)=>n+u.lessons.length,0);
     const questionCount=activeCourse.units.reduce((n,u)=>n+u.lessons.reduce((q,l)=>q+l.qs.length,0),0);
@@ -4596,7 +4620,7 @@ ${source}`;
     if(stop)return;
     closeModal();
     if(activeCourse&&activeCourse.units.some(u=>u.lessons.length)){
-      activeCourse.units=activeCourse.units.filter(u=>u.lessons.length).map(({title,lessons})=>({title,lessons}));
+      activeCourse.units=activeCourse.units.filter(u=>u.lessons.length).map(({title,lessons})=>({title,lessons:lessons.map(({title,qs})=>({title,qs}))}));
       (data.courses=data.courses||{})[id]=activeCourse;save();renderCourse(id);
       toast("Saved the lessons generated so far. Rebuild to retry missing content.");
     }else toast(e.message||"Couldn't build the course");
