@@ -240,7 +240,7 @@ const land=(x,y)=>{const e=eraI(),w=8+2*e,h=4+2*e,x0=(GW-w)>>1,y0=(GH-h)>>1;retu
 const pend=b=>Math.floor(Math.min(8,(Date.now()-b.t)/36e5)*BK(b.k)[6]*b.l);
 const popu=()=>!wstats().tot?0:CY().b.reduce((a,b)=>a+BK(b.k)[5]*b.l,0);
 const bAt=(x,y)=>CY().b.find(b=>b.x===x&&b.y===y);
-let vb={x:0,y:0,w:GW*T},pm=null,ptr=new Map(),pd=0,mv0=0,cpush=0,ctick=0;
+let vb={x:0,y:0,w:GW*T},pm=null,ptr=new Map(),pd=0,mv0=0,cpush=0,ctick=0,lastTileTap=0;
 function eraCheck(){const e=eraI(),c=CY();if(e>(c.era||0)){c.era=e;save();toast('🎉 Your settlement grew into a '+ERAS[e][0]+'! New land and buildings unlocked',false);celebrate({c:'#ffd166'})}}
 function setVB(){const s=$('#csv');if(!s)return;const r=s.getBoundingClientRect();vb.w=Math.max(260,Math.min(GW*T*1.3,vb.w));const h=vb.w*r.height/r.width;vb.x=Math.max(-100,Math.min(GW*T+100-vb.w,vb.x));vb.y=Math.max(-100,Math.min(GH*T+100-h,vb.y));s.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${h}`)}
 function zoomAt(f,cx,cy){const r=$('#csv').getBoundingClientRect(),k=vb.w/r.width,px=vb.x+(cx-r.left)*k,py=vb.y+(cy-r.top)*k,nw=Math.max(260,Math.min(GW*T*1.3,vb.w*f)),nk=nw/r.width;vb.w=nw;vb.x=px-(cx-r.left)*nk;vb.y=py-(cy-r.top)*nk;setVB()}
@@ -279,9 +279,10 @@ function bind(){const s=$('#csv');
  s.onpointerdown=e=>{if(e.pointerType==='mouse'&&e.button!==0)return;try{s.setPointerCapture(e.pointerId)}catch(_){}ptr.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,drag:false});if(ptr.size===2){const[a,b]=[...ptr.values()];pd=Math.hypot(a.x-b.x,a.y-b.y)}};
  s.onpointermove=e=>{const p=ptr.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
   if(ptr.size===2){const[a,b]=[...ptr.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(pd&&d)zoomAt(pd/d,(a.x+b.x)/2,(a.y+b.y)/2);pd=d;for(const q of ptr.values())q.drag=true}
-  else if(Math.hypot(e.clientX-p.sx,e.clientY-p.sy)>8){p.drag=true;const k=vb.w/s.getBoundingClientRect().width;vb.x-=dx*k;vb.y-=dy*k;setVB()}};
- s.onpointerup=e=>{const p=ptr.get(e.pointerId);if(!p)return;const tapOk=!p.drag&&Math.hypot(e.clientX-p.sx,e.clientY-p.sy)<24;ptr.delete(e.pointerId);pd=0;if(tapOk)tap(e)};
+  else if(Math.hypot(e.clientX-p.sx,e.clientY-p.sy)>16){p.drag=true;const k=vb.w/s.getBoundingClientRect().width;vb.x-=dx*k;vb.y-=dy*k;setVB()}};
+ s.onpointerup=e=>{const p=ptr.get(e.pointerId);if(!p)return;const moved=Math.hypot(e.clientX-p.sx,e.clientY-p.sy);const tapOk=!p.drag&&moved<36;ptr.delete(e.pointerId);pd=0;if(tapOk){e.preventDefault();lastTileTap=Date.now();tap(e)}};
  s.onpointercancel=e=>{ptr.delete(e.pointerId);pd=0};
+ s.onclick=e=>{if(Date.now()-lastTileTap<500){lastTileTap=0;return}tap(e)};
  s.onwheel=e=>{e.preventDefault();zoomAt(e.deltaY>0?1.12:.89,e.clientX,e.clientY)}}
 window.openCity=()=>{if($('#cfs'))return;eraCheck();const d=document.createElement('div');d.id='cfs';d.innerHTML='<svg id="csv" role="img" aria-label="Your city: tap land to build, tap buildings to collect or upgrade"></svg><div class="chud" id="chud"></div><div class="cbar" id="cbar"></div><div id="csheet"></div>';document.body.appendChild(d);document.body.style.overflow='hidden';
  try{history.pushState({c:1},'');cpush=1}catch(e){}
