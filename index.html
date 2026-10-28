@@ -264,12 +264,14 @@ function tap(e){const ct=e.target.closest&&e.target.closest('[data-c]');
  if(pm){if(b&&b!==pm.mv){toast('That spot is taken — pick a free tile',false);return}if(pm.mv){pm.mv.x=x;pm.mv.y=y;pm=null;save();cr();vib(15);return}cb(pm.k,x,y);return}
  b?(pend(b)>=1&&b.k!=='road'?cc(x,y):binfo(b)):bmenu(x,y)}
 function bind(){const s=$('#csv');
- s.onpointerdown=e=>{ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});mv0=0;if(ptr.size===2){const[a,b]=[...ptr.values()];pd=Math.hypot(a.x-b.x,a.y-b.y)}};
- s.onpointermove=e=>{const p=ptr.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;mv0+=Math.abs(dx)+Math.abs(dy);
-  if(ptr.size===2){const[a,b]=[...ptr.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(pd)zoomAt(pd/d,(a.x+b.x)/2,(a.y+b.y)/2);pd=d;mv0=99}
-  else{const k=vb.w/s.getBoundingClientRect().width;vb.x-=dx*k;vb.y-=dy*k;setVB()}};
- s.onpointerup=s.onpointercancel=e=>{const one=ptr.size===1;ptr.delete(e.pointerId);if(e.type==='pointerup'&&one&&mv0<8)tap(e)};
- s.onpointerleave=e=>ptr.delete(e.pointerId);
+ // Keep each pointer's start point so a normal finger tap still selects a tile,
+ // even if the browser reports a few pixels of touch jitter.
+ s.onpointerdown=e=>{if(e.pointerType==='mouse'&&e.button!==0)return;try{s.setPointerCapture(e.pointerId)}catch(_){}ptr.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,moved:0});if(ptr.size===2){const[a,b]=[...ptr.values()];pd=Math.hypot(a.x-b.x,a.y-b.y)}};
+ s.onpointermove=e=>{const p=ptr.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;p.moved+=Math.abs(dx)+Math.abs(dy);
+  if(ptr.size===2){const[a,b]=[...ptr.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(pd&&d)zoomAt(pd/d,(a.x+b.x)/2,(a.y+b.y)/2);pd=d;for(const q of ptr.values())q.moved=99}
+  else if(p.moved>5){const k=vb.w/s.getBoundingClientRect().width;vb.x-=dx*k;vb.y-=dy*k;setVB()}};
+ s.onpointerup=e=>{const p=ptr.get(e.pointerId);if(!p)return;const one=ptr.size===1;const moved=p.moved;ptr.delete(e.pointerId);pd=0;if(one&&moved<18)tap(e)};
+ s.onpointercancel=e=>{ptr.delete(e.pointerId);pd=0};
  s.onwheel=e=>{e.preventDefault();zoomAt(e.deltaY>0?1.12:.89,e.clientX,e.clientY)}}
 window.openCity=()=>{if($('#cfs'))return;eraCheck();const d=document.createElement('div');d.id='cfs';d.innerHTML='<svg id="csv" role="img" aria-label="Your city: tap land to build, tap buildings to collect or upgrade"></svg><div class="chud" id="chud"></div><div class="cbar" id="cbar"></div><div id="csheet"></div>';document.body.appendChild(d);document.body.style.overflow='hidden';
  try{history.pushState({c:1},'');cpush=1}catch(e){}
