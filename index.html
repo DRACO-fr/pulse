@@ -101,13 +101,13 @@ nav{z-index:40;isolation:isolate;transform:translateZ(0)}
 .inform nav{display:none}.inform main{padding-bottom:var(--s7)}.sheet{overscroll-behavior:contain}
 .fpage .card{padding:var(--s2) var(--s4) var(--s4)}.fpage h2{margin-top:var(--s5)}.btn.block{width:100%}
 nav button{transition:color .2s}nav button:active{transform:none}nav button:active .pi{transform:scale(.92)}
-.world svg{pointer-events:auto}.scene{border-radius:20px;overflow:hidden;line-height:0}.scene svg{width:100%;height:auto;display:block}.wcard{cursor:pointer}
+.world svg{pointer-events:auto}.scene{border-radius:20px;overflow:hidden;line-height:0}.scene>svg{width:100%;height:auto;display:block}.wcard{cursor:pointer}
 .ff{animation:ff 3s ease-in-out infinite}@keyframes ff{50%{transform:translate(8px,-10px);opacity:.2}}
 .fall{animation:fall 7s linear infinite}@keyframes fall{from{transform:translateY(-10px)}to{transform:translateY(190px)}}
 .sub{display:flex;align-items:center;gap:var(--s3);width:100%;min-height:40px;padding:6px 0;text-align:left;font-size:15px}.sub b{width:24px;height:24px;border-radius:8px;box-shadow:inset 0 0 0 2px var(--line);display:grid;place-items:center;font-size:14px;flex:none}.sub.on b{background:var(--ac);color:var(--act);box-shadow:none}.sub.on span{color:var(--mut);text-decoration:line-through}
 .rate{display:flex;gap:var(--s2);margin-top:var(--s3)}.rate button{flex:1;min-height:44px;border-radius:14px;background:var(--line);font-weight:700}.rate button.on{background:var(--ac);color:var(--act)}
 #cfs{position:fixed;inset:0;z-index:60;background:#0e1424;touch-action:none;animation:fade .25s}
-#csv{width:100%;height:100%;display:block;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+#csv{pointer-events:auto;width:100%;height:100%;display:block;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
 .chud,.cbar{position:absolute;left:0;right:0;display:flex;gap:8px;align-items:center;pointer-events:none;flex-wrap:wrap}
 .chud{top:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0}
 .cbar{bottom:0;justify-content:center;padding:0 12px calc(env(safe-area-inset-bottom,0px) + 14px)}
@@ -198,41 +198,64 @@ const wk=k=>{const d=new Date(k+'T12:00:00');return addD(k,-((d.getDay()+6)%7))}
 function wstats(){const c={health:0,learning:0,fitness:0,rest:0,other:0};let tot=0;
  for(const k in S.days)for(const id in S.days[k]){const h=H(id);if(h&&ok(h,k)){c[h.cat||'health']++;tot++}}
  return{c,tot}}
+function skyInfo(){const m=new Date().getMonth(),hr=new Date().getHours(),se=m>=2&&m<=4?'spring':m>=5&&m<=7?'summer':m>=8&&m<=10?'autumn':'winter',day=hr>=7&&hr<18,dusk=(hr>=18&&hr<20)||(hr>=5&&hr<7);
+ return{se,day,dusk,night:!day&&!dusk,sk:day?['#8fd3ff','#e8f7ff']:dusk?['#f6a07a','#ffd9a8']:['#14193a','#2d3a6b']}}
 function scene(){
- const{c,tot}=wstats(),m=new Date().getMonth(),hr=new Date().getHours(),
- se=m>=2&&m<=4?'spring':m>=5&&m<=7?'summer':m>=8&&m<=10?'autumn':'winter',day=hr>=7&&hr<18,dusk=(hr>=18&&hr<20)||(hr>=5&&hr<7),
- sk=day?['#8fd3ff','#e8f7ff']:dusk?['#f6a07a','#ffd9a8']:['#14193a','#2d3a6b'];
- let g='';
- if(!day&&!dusk)for(let i=0;i<9;i++)g+=`<circle cx="${18+i*37}" cy="${12+(i*17)%48}" r="1.4" fill="#fff" opacity=".8"/>`;
- g+=day||dusk?`<circle cx="278" cy="29" r="11" fill="#ffd76a"/>`:`<circle cx="278" cy="29" r="10" fill="#fff7c9"/>`;
- if(!tot||!CY().b.length)g+=`<g class="cld"><ellipse cx="70" cy="38" rx="25" ry="8" fill="#fff" opacity=".7"/><ellipse cx="91" cy="33" rx="18" ry="7" fill="#fff" opacity=".7"/></g>`;
- g+=`<path d="M0 105Q80 89 160 104T320 98V190H0z" fill="${se==='winter'?'#e6f0f3':'#8fd16a'}"/><path d="M0 148Q100 136 200 147T320 143V190H0z" fill="${se==='winter'?'#d5e6ea':'#6fbd55'}"/>`;
- // Render the same saved city coordinates as the builder, compacted into an isometric mini-map.
- // Every building/road appears at the corresponding x/y tile; nothing is invented from habit totals.
- const tile=(x,y)=>({x:160+(x-y)*7.2,y:83+(x+y)*3.15});
- const e=eraI(),w=8+2*e,h=4+2*e,x0=(GW-w)>>1,y0=(GH-h)>>1;
- for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(x>=x0&&x<x0+w&&y>=y0&&y<y0+h){
-   const q=tile(x,y),a=tile(x+1,y),b=tile(x+1,y+1),d=tile(x,y+1);
-   g+=`<polygon points="${q.x},${q.y} ${a.x},${a.y} ${b.x},${b.y} ${d.x},${d.y}" fill="${(x+y)%2?'#8fd16a':'#7fc65d'}" stroke="#ffffff" stroke-opacity=".18" stroke-width=".5"/>`;
- }
- (tot?CY().b:[]).slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(b=>{
-   const q=tile(b.x,b.y),d=BK(b.k);if(!d)return;
-   if(b.k==='road'){
-     g+=`<polygon points="${q.x},${q.y-3} ${q.x+7.2},${q.y} ${q.x},${q.y+3} ${q.x-7.2},${q.y}" fill="#6b7280" stroke="#dbe3ea" stroke-opacity=".55" stroke-width=".6"/><path d="M${q.x-3} ${q.y}l3 0" stroke="#f8fafc" stroke-width=".7"/>`;
-   }else{
-     const fs=b.k==='tree'?13: b.k==='tent'?10:12;
-     g+=`<ellipse cx="${q.x}" cy="${q.y+2.5}" rx="5.7" ry="2.1" fill="#233b2b" opacity=".22"/><text x="${q.x}" y="${q.y+2}" text-anchor="middle" dominant-baseline="middle" font-size="${fs+Math.min(3,(b.l-1)*1.5)}">${d[1]}</text>`;
-     if(b.l>1)g+=`<circle cx="${q.x+5}" cy="${q.y-4}" r="2" fill="#ffb703"/>`;
-   }
- });
- if(tot>=25)for(let i=0;i<5;i++)g+=`<circle class="ff" cx="${35+i*62}" cy="${122+(i%2)*18}" r="2" fill="#fff59d" style="animation-delay:${i*.6}s"/>`;
- if(se==='winter'||se==='autumn')for(let i=0;i<6;i++)g+=`<circle class="fall" cx="${20+i*55}" cy="0" r="${se==='winter'?2:2.5}" fill="${se==='winter'?'#fff':'#e08a3c'}" style="animation-delay:${i*-1}s"/>`;
- return `<svg viewBox="0 0 320 190" role="img" aria-label="Your world: ${tot} completions, ${se}"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sk[0]}"/><stop offset="1" stop-color="${sk[1]}"/></linearGradient></defs><rect width="320" height="190" fill="url(#sky)"/>${g}</svg>`
+ const{tot}=wstats(),{se,day,dusk,sk}=skyInfo(),bx=landBox(),ar=190/320;let w=bx.w,h=bx.h;if(h/w<ar)h=w*ar;else w=h/ar;
+ const vx=bx.x+bx.w/2-w/2,vy=bx.y+bx.h/2-h/2;let d='',fx='';
+ if(!day&&!dusk)for(let i=0;i<9;i++)d+=`<circle cx="${18+i*37}" cy="${12+(i*17)%48}" r="1.4" fill="#fff" opacity=".8"/>`;
+ d+=day||dusk?`<circle cx="278" cy="29" r="11" fill="#ffd76a"/>`:`<circle cx="278" cy="29" r="10" fill="#fff7c9"/>`;
+ if(!tot||!CY().b.length)d+=`<g class="cld"><ellipse cx="70" cy="38" rx="25" ry="8" fill="#fff" opacity=".7"/><ellipse cx="91" cy="33" rx="18" ry="7" fill="#fff" opacity=".7"/></g>`;
+ if(tot>=25)for(let i=0;i<5;i++)fx+=`<circle class="ff" cx="${35+i*62}" cy="${122+(i%2)*18}" r="2" fill="#fff59d" style="animation-delay:${i*.6}s"/>`;
+ if(se==='winter'||se==='autumn')for(let i=0;i<6;i++)fx+=`<circle class="fall" cx="${20+i*55}" cy="0" r="${se==='winter'?2:2.5}" fill="${se==='winter'?'#fff':'#e08a3c'}" style="animation-delay:${i*-1}s"/>`;
+ const nest=c=>`<svg x="${vx}" y="${vy}" width="${w}" height="${h}" viewBox="0 0 320 190">${c}</svg>`;
+ return `<svg viewBox="${vx} ${vy} ${w} ${h}" role="img" aria-label="Your world: ${tot} completions, ${se}"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sk[0]}"/><stop offset="1" stop-color="${sk[1]}"/></linearGradient></defs><rect x="${vx}" y="${vy}" width="${w}" height="${h}" fill="url(#sky)"/>${nest(d)}${cityLayer({})}${nest(fx)}</svg>`
 }
 /* ===== City builder ===== */
 const ERAS=[['Camp',0],['Village',10],['Town',50],['City',250],['Metropolis',1000]];
 const BT=[['road','','Road',2,0,0,0],['tent','⛺','Tent',10,0,1,1],['tree','🌳','Garden',15,0,0,1],['house','🏠','House',30,1,3,2],['fount','⛲','Fountain',40,1,0,2],['lib','📚','Library',60,1,0,3],['gym','🏋️','Gym',80,2,0,4],['shop','🏪','Market',90,2,0,5],['school','🏫','School',140,2,2,5],['apt','🏢','Apartments',200,3,8,6],['clinic','🏥','Clinic',220,3,0,6],['fun','🎡','Fun park',300,3,0,8],['stad','🏟️','Stadium',450,4,0,10],['uni','🎓','University',500,4,0,12],['sky','🏙️','Skyscraper',600,4,20,14]];
-const BK=k=>BT.find(x=>x[0]===k),T=48,GW=16,GH=12;
+const BK=k=>BT.find(x=>x[0]===k),GW=16,GH=12,TW=64,TH=36,SLAB=14;
+const P=(x,y)=>({x:(x-y)*TW/2,y:(x+y)*TH/2});
+const WB={x0:-GH*TW/2,x1:GW*TW/2,y0:-110,y1:(GW+GH)*TH/2+SLAB};
+const mixc=(h,f)=>{const n=parseInt(h.slice(1),16),t=f<0?0:255,a=Math.abs(f),m=v=>Math.round(v+(t-v)*a);return'#'+((1<<24)|(m(n>>16&255)<<16)|(m(n>>8&255)<<8)|m(n&255)).toString(16).slice(1)};
+const poly=(pts,fill,ex)=>`<polygon points="${pts.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ')}" fill="${fill}" ${ex||''}/>`;
+const BX={house:[20,'#f2c9a0'],lib:[26,'#d8c3f0'],gym:[24,'#b9d7f5'],shop:[22,'#ffd18a'],school:[26,'#ffb4a2'],apt:[46,'#cfd8e3'],clinic:[30,'#f6f7fb'],stad:[16,'#e5e7eb',.04],uni:[34,'#c8b6ff'],sky:[84,'#8ecae6']};
+const SPR={tree:30,tent:26,fount:28,fun:36};
+function landBox(){const e=eraI(),w=8+2*e,h=4+2*e,x0=(GW-w)>>1,y0=(GH-h)>>1,a=P(x0,y0+h).x-30,b=P(x0+w,y0).x+30,c=P(x0,y0).y-80,d=P(x0+w,y0+h).y+SLAB+24;return{x:a,y:c,w:b-a,h:d-c}}
+function bldg(b,tn,night,full){
+ const d=BK(b.k),x=b.x,y=b.y,m=P(x+.5,y+.5),bv=P(x+.88,y+.88),pop=b.n&&full;if(full)delete b.n;
+ let s=`<g data-bx="${x}" data-by="${y}"${pop?' class="bpop"':''} style="transform-box:fill-box;transform-origin:center bottom">`,top;
+ if(SPR[b.k]){const fs=SPR[b.k]+(b.l-1)*4;s+=`<ellipse cx="${m.x}" cy="${m.y+2}" rx="17" ry="7" fill="#233b2b" opacity=".25"/><text x="${m.x}" y="${m.y-fs*.3}" text-anchor="middle" dominant-baseline="middle" font-size="${fs}">${d[1]}</text>`;top=fs+8}
+ else{const[h0,col,ins]=BX[b.k],i=ins==null?.14:ins,H=h0*(1+.3*(b.l-1)),A=P(x+i,y+i),B=P(x+1-i,y+i),C=P(x+1-i,y+1-i),D=P(x+i,y+1-i),up=p=>({x:p.x,y:p.y-H});
+  s+=`<ellipse cx="${m.x+6}" cy="${m.y+4}" rx="26" ry="9" fill="#233b2b" opacity=".2"/>`+poly([D,C,up(C),up(D)],tn(mixc(col,-.12)))+poly([C,B,up(B),up(C)],tn(mixc(col,-.3)));
+  if(H>=30){const lp=(p,q,t,yy)=>`${(p.x+(q.x-p.x)*t).toFixed(1)} ${(p.y+(q.y-p.y)*t-yy).toFixed(1)}`;let w='';for(let yy=8;yy<H-4;yy+=8)w+=`M${lp(D,C,.12,yy)}L${lp(D,C,.88,yy)}M${lp(C,B,.12,yy)}L${lp(C,B,.88,yy)}`;
+   s+=`<path d="${w}" stroke="${night?'#ffe58a':'rgba(0,0,0,.2)'}" stroke-opacity="${night?.85:1}" stroke-width="2.4" stroke-dasharray="3 2.5" fill="none"/>`}
+  s+=poly([up(A),up(B),up(C),up(D)],tn(mixc(col,.1)))+`<text x="${m.x}" y="${m.y-H-1}" text-anchor="middle" dominant-baseline="middle" font-size="15">${d[1]}</text>`;top=H+14}
+ for(let i=0;i<b.l;i++)s+=`<circle cx="${bv.x+(i-(b.l-1)/2)*7}" cy="${bv.y-2}" r="2.4" fill="#ffb703" stroke="rgba(0,0,0,.25)" stroke-width=".6"/>`;
+ if(pend(b)>=1)s+=`<text class="rdy" x="${m.x}" y="${m.y-top-6}" text-anchor="middle" font-size="16">💰</text>`;
+ return s+'</g>'}
+function cityLayer(o){
+ const c=CY(),e=eraI(),{tot}=wstats(),{night,se}=skyInfo(),tn=h=>night?mixc(h,-.38):h,bs=tot?c.b:[],L=[],
+  gA=se==='winter'?['#eef5f7','#e2edf0']:['#8fd16a','#86c962'],fog=['#4a5a6e','#415064'];
+ let g='';const A=P(0,0),B=P(GW,0),C=P(GW,GH),D=P(0,GH),dn=p=>({x:p.x,y:p.y+SLAB});
+ g+=poly([D,C,dn(C),dn(D)],tn('#5b4636'))+poly([C,B,dn(B),dn(C)],tn('#46362a'));
+ for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const a=land(x,y);if(a)L.push([x,y]);g+=poly([P(x,y),P(x+1,y),P(x+1,y+1),P(x,y+1)],tn(a?gA[(x+y)%2]:fog[(x+y)%2]),a?'stroke="#fff" stroke-opacity=".15" stroke-width=".6"':'')}
+ const rd=new Set(bs.filter(b=>b.k==='road').map(b=>b.x+','+b.y));
+ bs.filter(b=>b.k==='road').forEach(b=>{const x=b.x,y=b.y,i=.04,m=P(x+.5,y+.5);let ln='';
+  g+=poly([P(x+i,y+i),P(x+1-i,y+i),P(x+1-i,y+1-i),P(x+i,y+1-i)],tn('#6b7280'));
+  [[1,.5,1,0],[0,.5,-1,0],[.5,1,0,1],[.5,0,0,-1]].forEach(([ex,ey,dx,dy])=>{if(rd.has((x+dx)+','+(y+dy))){const q=P(x+ex,y+ey);ln+=`M${m.x} ${m.y}L${q.x} ${q.y}`}});
+  if(!ln){const q1=P(x+.25,y+.5),q2=P(x+.75,y+.5);ln=`M${q1.x} ${q1.y}L${q2.x} ${q2.y}`}
+  g+=`<path d="${ln}" stroke="#f1f5f9" stroke-opacity=".7" stroke-width="2.2" stroke-dasharray="5 4" fill="none"/>`});
+ const items=[];
+ bs.filter(b=>b.k!=='road').forEach(b=>items.push({d:b.x+b.y+1,x:b.x,s:bldg(b,tn,night,o.full)}));
+ const free=L.filter(t=>!bAt(t[0],t[1])),pool=free.length?free:L,n=Math.min(14,popu()+(e?1:0));
+ for(let i=0;i<n&&pool.length;i++){const t=pool[(i*7919+3)%pool.length],m=P(t[0]+.5,t[1]+.5);
+  items.push({d:t[0]+t[1]+.6,x:t[0],s:`<text class="cz" data-c="${i}" x="${m.x-7}" y="${m.y+3}" font-size="15" style="--dx:${((i*53)%50)-25}px;--dy:${((i*31)%30)-15}px;animation-duration:${5+i%4}s;animation-delay:${-i}s">${['🚶','🧑‍🌾','🚴','🐕'][i%4]}</text>`})}
+ items.sort((a,b)=>a.d-b.d||a.x-b.x).forEach(it=>g+=it.s);
+ const dia=(x,y,i)=>[P(x+i,y+i),P(x+1-i,y+i),P(x+1-i,y+1-i),P(x+i,y+1-i)];
+ if(o.hl)L.forEach(t=>{const b=bAt(t[0],t[1]);if(!b||(o.hl.mv&&b===o.hl.mv))g+=poly(dia(t[0],t[1],.06),'#fff','fill-opacity=".28" stroke="#fff" stroke-dasharray="5 4" stroke-width="2" pointer-events="none"')});
+ if(o.sel)g+=poly(dia(o.sel[0],o.sel[1],.02),'#ffd166','fill-opacity=".3" stroke="#ffd166" stroke-width="3" pointer-events="none"');
+ return g}
 const CY=()=>S.city||(S.city={b:[],spent:0,got:0,era:0});
 const eraI=()=>{const t=wstats().tot;let e=0;ERAS.forEach((x,i)=>{if(t>=x[1])e=i});return e};
 const bank=()=>Math.max(0,wstats().tot*5+CY().got-CY().spent);
@@ -240,24 +263,18 @@ const land=(x,y)=>{const e=eraI(),w=8+2*e,h=4+2*e,x0=(GW-w)>>1,y0=(GH-h)>>1;retu
 const pend=b=>Math.floor(Math.min(8,(Date.now()-b.t)/36e5)*BK(b.k)[6]*b.l);
 const popu=()=>!wstats().tot?0:CY().b.reduce((a,b)=>a+BK(b.k)[5]*b.l,0);
 const bAt=(x,y)=>CY().b.find(b=>b.x===x&&b.y===y);
-let vb={x:0,y:0,w:GW*T},pm=null,ptr=new Map(),pd=0,mv0=0,cpush=0,ctick=0,lastTileTap=0;
+let vb={x:0,y:0,w:900},selT=null,pm=null,ptr=new Map(),pd=0,mv0=0,cpush=0,ctick=0,lastTileTap=0;
 function eraCheck(){const e=eraI(),c=CY();if(e>(c.era||0)){c.era=e;save();toast('🎉 Your settlement grew into a '+ERAS[e][0]+'! New land and buildings unlocked',false);celebrate({c:'#ffd166'})}}
-function setVB(){const s=$('#csv');if(!s)return;const r=s.getBoundingClientRect();vb.w=Math.max(260,Math.min(GW*T*1.3,vb.w));const h=vb.w*r.height/r.width;vb.x=Math.max(-100,Math.min(GW*T+100-vb.w,vb.x));vb.y=Math.max(-100,Math.min(GH*T+100-h,vb.y));s.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${h}`)}
-function zoomAt(f,cx,cy){const r=$('#csv').getBoundingClientRect(),k=vb.w/r.width,px=vb.x+(cx-r.left)*k,py=vb.y+(cy-r.top)*k,nw=Math.max(260,Math.min(GW*T*1.3,vb.w*f)),nk=nw/r.width;vb.w=nw;vb.x=px-(cx-r.left)*nk;vb.y=py-(cy-r.top)*nk;setVB()}
+const clampAx=(v,lo,hi)=>hi<lo?(lo+hi)/2:Math.max(lo,Math.min(hi,v));
+function setVB(){const s=$('#csv');if(!s)return;const r=s.getBoundingClientRect();if(!r.width||!r.height)return;vb.w=Math.max(220,Math.min(WB.x1-WB.x0+240,vb.w));const h=vb.w*r.height/r.width;vb.x=clampAx(vb.x,WB.x0-120,WB.x1+120-vb.w);vb.y=clampAx(vb.y,WB.y0-80,WB.y1+80-h);s.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${h}`)}
+function zoomAt(f,cx,cy){const r=$('#csv').getBoundingClientRect(),k=vb.w/r.width,px=vb.x+(cx-r.left)*k,py=vb.y+(cy-r.top)*k,nw=Math.max(220,Math.min(WB.x1-WB.x0+240,vb.w*f)),nk=nw/r.width;vb.w=nw;vb.x=px-(cx-r.left)*nk;vb.y=py-(cy-r.top)*nk;setVB()}
 window.zm=f=>zoomAt(f,innerWidth/2,innerHeight/2);
-function cr(){const s=$('#csv');if(!s)return;const c=CY(),e=eraI(),{tot}=wstats(),hr=new Date().getHours(),night=hr<6||hr>=20,L=[];let g='',sum=0;
- for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const a=land(x,y);if(a)L.push([x,y]);g+=`<rect x="${x*T}" y="${y*T}" width="${T}" height="${T}" fill="${a?((x+y)%2?'#8fd16a':'#86c962'):((x+y)%2?'#3b4a5c':'#334255')}"/>`}
- (tot?c.b:[]).forEach(b=>{const d=BK(b.k),X=b.x*T,Y=b.y*T,p=pend(b),nn=b.n;delete b.n;sum+=p;
-  if(b.k==='road'){g+=`<rect x="${X+4}" y="${Y+4}" width="${T-8}" height="${T-8}" rx="6" fill="#6b7280"/><rect x="${X+T/2-2}" y="${Y+10}" width="4" height="${T-20}" rx="2" fill="#e5e7eb" opacity=".6"/>`;return}
-  g+=`<g${nn?' class="bpop"':''} style="transform-box:fill-box;transform-origin:center"><rect x="${X+3}" y="${Y+3}" width="${T-6}" height="${T-6}" rx="12" fill="#fffdf8" opacity=".93"/><text x="${X+T/2}" y="${Y+T/2}" text-anchor="middle" dominant-baseline="middle" font-size="${22+b.l*4}">${d[1]}</text>${[...Array(b.l)].map((_,i)=>`<circle cx="${X+11+i*9}" cy="${Y+T-9}" r="3" fill="#ffb703"/>`).join('')}${p>=1?`<text class="rdy" x="${X+T-6}" y="${Y+12}" text-anchor="middle" font-size="16">💰</text>`:''}</g>`});
- if(pm)L.forEach(t=>{if(!bAt(t[0],t[1])||(pm.mv&&bAt(t[0],t[1])===pm.mv))g+=`<rect x="${t[0]*T+3}" y="${t[1]*T+3}" width="${T-6}" height="${T-6}" rx="10" fill="#fff" fill-opacity=".25" stroke="#fff" stroke-dasharray="5 4" stroke-width="2" pointer-events="none"/>`});
- const n=Math.min(14,popu()+(e?1:0));
- for(let i=0;i<n&&L.length;i++){const t=L[(i*7919+3)%L.length];g+=`<text class="cz" data-c="${i}" x="${t[0]*T+10}" y="${t[1]*T+30}" font-size="18" style="--dx:${((i*53)%80)-40}px;--dy:${((i*31)%50)-25}px;animation-duration:${5+i%4}s;animation-delay:${-i}s">${['🚶','🧑‍🌾','🚴','🐕'][i%4]}</text>`}
- if(night)g+=`<rect width="${GW*T}" height="${GH*T}" fill="#0b1020" opacity=".4" pointer-events="none"/>`;
- s.innerHTML=g;
+function cr(){const s=$('#csv');if(!s)return;const c=CY(),e=eraI(),{tot}=wstats(),sk=skyInfo().sk;
+ s.style.background=`linear-gradient(${sk[0]},${sk[1]})`;s.innerHTML=cityLayer({full:1,hl:pm,sel:selT});
+ const sum=(tot?c.b:[]).reduce((a,b)=>a+pend(b),0);
  $('#chud').innerHTML=`<button class="chip" onclick="closeCity()" aria-label="Close city">‹ Back</button><span class="pill">🧱 ${bank()}</span><span class="pill">👥 ${popu()}</span><span class="pill">${ERAS[e][0]}${e<4?' · '+tot+'/'+ERAS[e+1][1]:' · max'}</span>`;
  $('#cbar').innerHTML=pm?`<span class="pill">${pm.mv?'Moving: tap a free tile':'Placing '+BK(pm.k)[2]+' · 🧱 '+BK(pm.k)[3]}</span><button class="btn sm" onclick="pc()">Done</button>`:`<button class="chip" onclick="zm(.8)" aria-label="Zoom in">＋</button><button class="chip" onclick="zm(1.25)" aria-label="Zoom out">－</button><button class="btn sm" onclick="bmenu()">🔨 Build</button><button class="btn sm ghost" onclick="cAll()">Collect 💰 ${sum}</button>`}
-function csheet(h){$('#csheet').innerHTML=h?`<div class="modal" style="z-index:70" onclick="if(event.target===this)csheet()"><div class="sheet">${h}</div></div>`:''}
+function csheet(h){if(!h)selT=null;$('#csheet').innerHTML=h?`<div class="modal" style="z-index:70" onclick="if(event.target===this){csheet();cr()}"><div class="sheet">${h}</div></div>`:''}
 function bmenu(x,y){const bk=bank();csheet(`<h3>${x==null?'Choose what to build':'Build here'}</h3><p class="mut">🧱 ${bk} bricks · earn 5 per habit completion, plus income from buildings.</p>${BT.map(d=>{const lock=d[4]>eraI();return `<button class="card row" style="width:100%;text-align:left;opacity:${lock?.45:1}" ${lock?'disabled':''} onclick="${x==null?`pk('${d[0]}')`:`cb('${d[0]}',${x},${y})`}"><div class="ic" style="--c:#1fb5a4">${d[1]||'🛣️'}</div><div class="sp"><div class="ttl">${d[2]}</div><div class="mut">${lock?'🔒 Unlocks in '+ERAS[d[4]][0]:(d[5]?'+'+d[5]+' people · ':'')+(d[6]?d[6]+' 🧱/hr':'Connects the city')}</div></div><b style="${bk>=d[3]||lock?'':'color:var(--coral)'}">🧱 ${d[3]}</b></button>`}).join('')}`)}
 function binfo(b){const d=BK(b.k),p=pend(b),up=Math.round(d[3]*b.l*1.5);csheet(`<div class="row"><div class="ic" style="--c:#ffd166">${d[1]}</div><div class="sp"><h3 style="margin:0">${d[2]} · Lv ${b.l}</h3><div class="mut">${d[5]?'👥 '+d[5]*b.l+' people · ':''}${d[6]*b.l} 🧱/hr · ${p} ready</div></div></div><div class="acts" style="margin-top:var(--s4)">${p>=1?`<button class="btn sm" onclick="cc(${b.x},${b.y})">Collect 💰 ${p}</button>`:''}${b.l<3?`<button class="btn sm ghost" onclick="cu(${b.x},${b.y})">Upgrade 🧱 ${up}</button>`:'<span class="lbl">Max level</span>'}<button class="btn sm ghost" onclick="cm(${b.x},${b.y})">Move</button><button class="btn sm ghost" style="color:var(--coral)" onclick="cd(${b.x},${b.y})">Demolish (+${Math.floor(d[3]*b.l/2)})</button></div>`)}
 window.cb=(k,x,y)=>{const d=BK(k);if(bank()<d[3]){toast('Need '+(d[3]-bank())+' more bricks — complete habits to earn them',false);return}CY().spent+=d[3];CY().b.push({k,x,y,l:1,t:Date.now(),n:1});if(pm&&bank()<d[3]){pm=null;toast('Out of bricks — placement finished',false)}save();csheet();cr();vib(15);snd()};
@@ -266,13 +283,15 @@ window.cAll=()=>{let s=0;CY().b.forEach(b=>{s+=pend(b);b.t=Date.now()});if(!s){t
 window.pk=k=>{pm={k};csheet();cr();toast('Tap any free highlighted tile to place it',false)};window.cm=(x,y)=>{pm={mv:bAt(x,y)};csheet();cr();toast('Tap a free tile to move it there',false)};window.pc=()=>{pm=null;cr()};
 window.cu=(x,y)=>{const b=bAt(x,y),d=BK(b.k),up=Math.round(d[3]*b.l*1.5);if(bank()<up){toast('Need '+(up-bank())+' more bricks',false);return}CY().got+=pend(b);b.t=Date.now();CY().spent+=up;b.l++;b.n=1;save();csheet();cr();vib(20);snd()};
 window.cd=(x,y)=>{const b=bAt(x,y),d=BK(b.k);if(!confirm('Demolish this '+d[2]+'? You get half the bricks back.'))return;CY().spent-=Math.floor(d[3]*b.l/2);CY().got+=pend(b);CY().b=CY().b.filter(z=>z!==b);save();csheet();cr()};
-function tap(e){const ct=e.target.closest&&e.target.closest('[data-c]');
+function tap(e){const el=document.elementFromPoint(e.clientX,e.clientY),ct=el&&el.closest&&el.closest('[data-c]');
  if(ct){const dn=S.habits.filter(h=>ok(h,today())),m=dn.map(h=>'I did "'+esc(h.n)+'" today '+h.i).concat(['What a lovely city!','Keep building — I love it here','Is that a new building?']);toast('💬 '+m[(+ct.dataset.c+Math.floor(Date.now()/9e4))%m.length],false);return}
- const s=$('#csv'),pt=s.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const q=pt.matrixTransform(s.getScreenCTM().inverse()),x=Math.floor(q.x/T),y=Math.floor(q.y/T);
+ const bel=el&&el.closest&&el.closest('[data-bx]');let x,y;
+ if(bel){x=+bel.dataset.bx;y=+bel.dataset.by}else{const s=$('#csv'),pt=s.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const q=pt.matrixTransform(s.getScreenCTM().inverse()),u=q.x/(TW/2),v=q.y/(TH/2);x=Math.floor((u+v)/2);y=Math.floor((v-u)/2)}
  if(x<0||y<0||x>=GW||y>=GH||!land(x,y)){const e2=eraI();toast(e2<4?'🌫️ Fog of the unknown — reach '+ERAS[e2+1][0]+' ('+ERAS[e2+1][1]+' completions) to unlock more land':'Beyond the city limits',false);return}
  const b=bAt(x,y);
  if(!wstats().tot){toast('🌾 An empty field. Complete a habit to earn 🧱 and start building',false);return}
  if(pm){if(b&&b!==pm.mv){toast('That spot is taken — pick a free tile',false);return}if(pm.mv){pm.mv.x=x;pm.mv.y=y;pm=null;save();cr();vib(15);return}cb(pm.k,x,y);return}
+ if(!(b&&pend(b)>=1&&b.k!=='road')){selT=[x,y];cr()}
  b?(pend(b)>=1&&b.k!=='road'?cc(x,y):binfo(b)):bmenu(x,y)}
 function bind(){const s=$('#csv');
  // Distinguish a deliberate tap from a pan using displacement from the start point.
@@ -286,7 +305,7 @@ function bind(){const s=$('#csv');
  s.onwheel=e=>{e.preventDefault();zoomAt(e.deltaY>0?1.12:.89,e.clientX,e.clientY)}}
 window.openCity=()=>{if($('#cfs'))return;eraCheck();const d=document.createElement('div');d.id='cfs';d.innerHTML='<svg id="csv" role="img" aria-label="Your city: tap land to build, tap buildings to collect or upgrade"></svg><div class="chud" id="chud"></div><div class="cbar" id="cbar"></div><div id="csheet"></div>';document.body.appendChild(d);document.body.style.overflow='hidden';
  try{history.pushState({c:1},'');cpush=1}catch(e){}
- const w=(8+2*eraI())*T+2*T,r=$('#csv').getBoundingClientRect();vb={x:GW*T/2-w/2,y:GH*T/2-w*r.height/r.width/2,w};ptr.clear();bind();cr();setVB();ctick=setInterval(()=>$('#cfs')&&!$('#csheet').firstChild&&cr(),20000)};
+ const r=$('#csv').getBoundingClientRect(),bx=landBox(),ar=(r.height&&r.width)?r.height/r.width:1.8;let w=bx.w,h=bx.h;if(h/w<ar)h=w*ar;else w=h/ar;vb={x:bx.x+bx.w/2-w/2,y:bx.y+bx.h/2-h/2,w};ptr.clear();bind();cr();setVB();ctick=setInterval(()=>$('#cfs')&&!$('#csheet').firstChild&&cr(),20000)};
 window.closeCity=nb=>{const d=$('#cfs');if(!d)return;d.remove();document.body.style.overflow='';clearInterval(ctick);const p=cpush;cpush=0;pm=null;if(p&&!nb){try{history.back()}catch(e){}}render()};
 addEventListener('popstate',()=>{if($('#cfs')){cpush=0;closeCity(1)}});
 addEventListener('keydown',e=>{if(e.key==='Escape')closeCity()});
