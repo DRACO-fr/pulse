@@ -112,7 +112,18 @@ nav button{transition:color .2s}nav button:active{transform:none}nav button:acti
 .chud{top:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0}
 .cbar{bottom:0;justify-content:center;padding:0 12px calc(env(safe-area-inset-bottom,0px) + 14px)}
 .chud>*,.cbar>*{pointer-events:auto}
-.cz{animation:cz 6s ease-in-out infinite alternate;cursor:pointer}@keyframes cz{to{transform:translate(var(--dx),var(--dy))}}
+.cz{cursor:pointer}
+.cw{animation:cz 6s ease-in-out infinite alternate}@keyframes cz{to{transform:translate(var(--dx),var(--dy))}}
+.ci{animation:czi var(--du,16s) linear infinite}
+@keyframes czi{0%{transform:translate(0,0);opacity:1;visibility:visible}34%,40%{transform:translate(var(--dx),var(--dy));opacity:1;visibility:visible}43%{transform:translate(var(--dx),var(--dy));opacity:0;visibility:visible}44%,62%{transform:translate(var(--dx),var(--dy));opacity:0;visibility:hidden}63%{transform:translate(var(--dx),var(--dy));opacity:0;visibility:visible}66%,72%{transform:translate(var(--dx),var(--dy));opacity:1;visibility:visible}100%{transform:translate(0,0);opacity:1}}
+.co{animation:czo var(--du,18s) linear infinite}
+@keyframes czo{0%{transform:translate(0,0)}25%{transform:translate(var(--x1),var(--y1))}50%{transform:translate(var(--x2),var(--y2))}75%{transform:translate(var(--x3),var(--y3))}100%{transform:translate(0,0)}}
+.bob{animation:bb .22s ease-in-out infinite alternate}@keyframes bb{to{transform:translateY(-1px)}}
+.l1,.l2,.a1,.a2,.wv{transform-box:fill-box}
+.l1,.l2{transform-origin:50% 0}.l1{animation:sw .45s ease-in-out infinite alternate}.l2{animation:sw .45s ease-in-out infinite alternate-reverse}
+.a1{transform-origin:100% 0;animation:sw .45s ease-in-out infinite alternate-reverse}.a2{transform-origin:0 0;animation:sw .45s ease-in-out infinite alternate}
+.wv{transform-origin:0 100%;animation:wv .5s ease-in-out infinite alternate}
+@keyframes sw{from{transform:rotate(-22deg)}to{transform:rotate(22deg)}}@keyframes wv{from{transform:rotate(-12deg)}to{transform:rotate(14deg)}}
 .rdy{animation:rdy 1.1s ease-in-out infinite;cursor:pointer}@keyframes rdy{50%{transform:translateY(-5px)}}
 .bpop{animation:bpop .55s var(--spring)}@keyframes bpop{from{transform:scale(.3);opacity:0}}
 .cld{animation:cld 14s ease-in-out infinite alternate}@keyframes cld{to{transform:translateX(24px)}}
@@ -289,6 +300,10 @@ function bldg(b,tn,night,full){
  for(let i=0;i<b.l;i++)s+=`<circle cx="${bv.x+(i-(b.l-1)/2)*7}" cy="${bv.y-2}" r="2.4" fill="#ffb703" stroke="rgba(0,0,0,.25)" stroke-width=".6"/>`;
  if(pend(b)>=1)s+=`<text class="rdy" x="${m.x}" y="${m.y-top-6}" text-anchor="middle" font-size="16">💰</text>`;
  return s+'</g>'}
+const kidSpr=(t,tn)=>{const c=tn,S=(d,col,w)=>`<path d="${d}" stroke="${c(col)}" stroke-width="${w}" fill="none" stroke-linecap="round"/>`,
+ E=(x,y,rx,ry,col)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${c(col)}"/>`,R=(x,y,w,h,col,r)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r||0}" fill="${c(col)}"/>`,Pp=(d,col)=>`<path d="${d}" fill="${c(col)}"/>`;
+ if(!t)return`<g transform="scale(.72)"><g class="bob"><g class="l1">${S('M-3.5 -7V-2.5','#f6c6a0',2.4)+E(-3.8,-1.3,3.4,1.8,'#9a9a9f')}</g><g class="l2">${S('M3.5 -7V-2.5','#f6c6a0',2.4)+E(3.8,-1.3,3.4,1.8,'#9a9a9f')}</g>${R(-6,-13,12,7,'#5aa24a',1.8)+R(-6,-8.2,12,1.5,'#e6dfc8')+R(-5.4,-19,10.8,7.5,'#f2ead2',2.4)+Pp('M-5.4 -19H-2.6L-3.6 -11.5H-5.4Z','#e0642f')+Pp('M5.4 -19H2.6L3.6 -11.5H5.4Z','#e0642f')+Pp('M-2.5 -19.6H2.5L0 -16Z','#e0642f')}<g class="a1">${S('M-5.4 -18L-8 -12','#f2ead2',2.8)}<circle cx="-8.2" cy="-11.2" r="1.7" fill="${c('#f6c6a0')}"/></g><g class="a2">${S('M5.4 -18L8 -12','#f2ead2',2.8)}<circle cx="8.2" cy="-11.2" r="1.7" fill="${c('#f6c6a0')}"/></g>${E(-6,-25,1.3,1.8,'#f6c6a0')+E(6,-25,1.3,1.8,'#f6c6a0')}<circle cx="0" cy="-25" r="6.2" fill="${c('#f6c6a0')}"/>${Pp('M-6.1 -26Q-6.4 -32.6 0 -32Q6.4 -32.6 6.1 -26Q3 -29.4 0 -28.4Q-3 -29.4-6.1 -26Z','#a8532a')+Pp('M-7.6 -27Q-7.4 -35 0.5 -34.4Q5.6 -34 5.2 -28.2L-1 -28.6Z','#e8552b')+Pp('M-7.6 -27Q-9.6 -26.6 -9 -25.4L-4 -27Z','#c9441f')}<circle cx="-2.3" cy="-25" r="1.5" fill="#fff"/><circle cx="2.3" cy="-25" r="1.5" fill="#fff"/><circle cx="-2.3" cy="-24.9" r=".8" fill="${c('#6a9a3a')}"/><circle cx="2.3" cy="-24.9" r=".8" fill="${c('#6a9a3a')}"/><path d="M-2 -21.8Q0 -20.4 2 -21.8" stroke="#8a3d2b" stroke-width=".6" fill="none"/></g></g>`;
+ return`<g transform="scale(.72)"><g class="bob"><g class="l1">${S('M-2.6 -12V-3','#4a5a78',3.6)+E(-3,-1.3,3.4,1.8,'#a8723a')}</g><g class="l2">${S('M2.6 -12V-3','#4a5a78',3.6)+E(3,-1.3,3.4,1.8,'#a8723a')}</g>${R(-5.4,-19,10.8,7.5,'#d8d2c6',2.4)+Pp('M-5.6 -19H-2.4L-3.4 -11.8H-5.6Z','#5aa8e0')+Pp('M5.6 -19H2.4L3.4 -11.8H5.6Z','#5aa8e0')}<g class="a2">${S('M-5.4 -18L-8.6 -14','#f0b890',2.4)}<circle cx="-8.8" cy="-13.4" r="1.7" fill="${c('#f0b890')}"/></g><g class="wv">${S('M5.4 -18L9 -26','#f0b890',2.4)}<circle cx="9.3" cy="-27.2" r="1.9" fill="${c('#f0b890')}"/></g>${E(-5.6,-25,1.3,1.8,'#f0b890')+E(5.6,-25,1.3,1.8,'#f0b890')}<circle cx="0" cy="-25" r="5.8" fill="${c('#f0b890')}"/>${Pp('M-5.8 -26Q-6.6 -32.4 -1 -31.8Q4 -33.4 5.8 -27.4Q5 -29.2 2.4 -29Q-2 -28.6-5.8 -26Z','#6b3f24')}<circle cx="-2.2" cy="-25" r="1.5" fill="#fff"/><circle cx="2.2" cy="-25" r="1.5" fill="#fff"/><circle cx="-2.2" cy="-24.9" r=".8" fill="#4a2c18"/><circle cx="2.2" cy="-24.9" r=".8" fill="#4a2c18"/><path d="M-3 -22.2Q0 -18.6 3 -22.2Z" fill="#7a2e2a"/><path d="M-2 -22.1H2L1.4 -21.2H-1.4Z" fill="#fff"/></g></g>`};
 function cityLayer(o){
  const c=CY(),e=eraI(),{tot}=wstats(),{night,se}=skyInfo(),tn=h=>night?mixc(h,-.38):h,bs=tot?c.b:[],L=[],
   gA=se==='winter'?['#eef5f7','#e2edf0']:['#8fd16a','#86c962'],fog=['#4a5a6e','#415064'];
@@ -303,9 +318,20 @@ function cityLayer(o){
   g+=`<path d="${ln}" stroke="#f1f5f9" stroke-opacity=".7" stroke-width="2.2" stroke-dasharray="5 4" fill="none"/>`});
  const items=[];
  bs.filter(b=>b.k!=='road').forEach(b=>items.push({d:b.x+b.y+1,x:b.x,s:bldg(b,tn,night,o.full)}));
- const free=L.filter(t=>!bAt(t[0],t[1])),pool=free.length?free:L,n=Math.min(14,popu()+(e?1:0));
- for(let i=0;i<n&&pool.length;i++){const t=pool[(i*7919+3)%pool.length],m=P(t[0]+.5,t[1]+.5);
-  items.push({d:t[0]+t[1]+.6,x:t[0],s:`<text class="cz" data-c="${i}" x="${m.x-7}" y="${m.y+3}" font-size="15" style="--dx:${((i*53)%50)-25}px;--dy:${((i*31)%30)-15}px;animation-duration:${5+i%4}s;animation-delay:${-i}s">${['🚶','🧑‍🌾','🚴','🐕'][i%4]}</text>`})}
+ const nb=bs.filter(b=>b.k!=='road'),n=Math.min(14,popu()+(e?1:0)),isR=t=>rd.has(t[0]+','+t[1]),
+  cand=b=>L.filter(t=>{const q=bAt(t[0],t[1]),d=Math.abs(t[0]-b.x)+Math.abs(t[1]-b.y-1);return(!q||q.k==='road')&&d>=2&&d<=6}).sort((a,c)=>isR(c)-isR(a));
+ const free=L.filter(t=>!bAt(t[0],t[1])),pool=free.length?free:L,ENT=['house','lib','gym','shop','school','apt','clinic','uni','tent','sky','stad'];
+ for(let i=0;i<n&&pool.length;i++){
+  const vn=(i%3?1:0)^(i%2?1:0),spr=kidSpr(i%2?1:0,tn);let tg=nb.length?nb[(i*5+1)%nb.length]:null,t,m,it;
+  if(tg){const cd=cand(tg);t=cd.length?cd[(i*7+3)%Math.min(6,cd.length)]:[tg.x,Math.min(GH-1,tg.y+1)];m=P(t[0]+.5,t[1]+.5);
+   const du=(14+i%5*2)+'s',dl='animation-delay:'+(-i*2.7).toFixed(1)+'s;animation-duration:'+du;
+   if(ENT.includes(tg.k)){const u=tg.k==='house'?.4:.5,q=P(tg.x+u,tg.y+.97);
+    it={d:tg.x+tg.y+1.3,x:tg.x,s:`<g transform="translate(${m.x.toFixed(1)},${m.y.toFixed(1)})"><g class="cz ci" data-c="${i}" style="--dx:${(q.x-m.x).toFixed(1)}px;--dy:${(q.y-m.y).toFixed(1)}px;${dl}">${spr}</g></g>`}}
+   else{const L1=P(tg.x-.1,tg.y+.8),F=P(tg.x+.5,tg.y+1.1),R1=P(tg.x+1.1,tg.y+.8),o=q=>[(q.x-m.x).toFixed(1),(q.y-m.y).toFixed(1)];
+    it={d:tg.x+tg.y+1.3,x:tg.x,s:`<g transform="translate(${m.x.toFixed(1)},${m.y.toFixed(1)})"><g class="cz co" data-c="${i}" style="--x1:${o(L1)[0]}px;--y1:${o(L1)[1]}px;--x2:${o(F)[0]}px;--y2:${o(F)[1]}px;--x3:${o(R1)[0]}px;--y3:${o(R1)[1]}px;${dl}">${spr}</g></g>`}}}
+  else{t=pool[(i*7919+3)%pool.length];m=P(t[0]+.5,t[1]+.5);
+   it={d:t[0]+t[1]+.6,x:t[0],s:`<g transform="translate(${m.x.toFixed(1)},${m.y.toFixed(1)})"><g class="cz cw" data-c="${i}" style="--dx:${((i*53)%50)-25}px;--dy:${((i*31)%30)-15}px;animation-duration:${5+i%4}s;animation-delay:${-i}s">${spr}</g></g>`}}
+  items.push(it)}
  items.sort((a,b)=>a.d-b.d||a.x-b.x).forEach(it=>g+=it.s);
  const dia=(x,y,i)=>[P(x+i,y+i),P(x+1-i,y+i),P(x+1-i,y+1-i),P(x+i,y+1-i)];
  if(o.hl)L.forEach(t=>{const b=bAt(t[0],t[1]);if(!b||(o.hl.mv&&b===o.hl.mv))g+=poly(dia(t[0],t[1],.06),'#fff','fill-opacity=".28" stroke="#fff" stroke-dasharray="5 4" stroke-width="2" pointer-events="none"')});
