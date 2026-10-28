@@ -198,26 +198,37 @@ const wk=k=>{const d=new Date(k+'T12:00:00');return addD(k,-((d.getDay()+6)%7))}
 function wstats(){const c={health:0,learning:0,fitness:0,rest:0,other:0};let tot=0;
  for(const k in S.days)for(const id in S.days[k]){const h=H(id);if(h&&ok(h,k)){c[h.cat||'health']++;tot++}}
  return{c,tot}}
-function scene(){const{c,tot}=wstats(),m=new Date().getMonth(),hr=new Date().getHours(),
+function scene(){
+ const{c,tot}=wstats(),m=new Date().getMonth(),hr=new Date().getHours(),
  se=m>=2&&m<=4?'spring':m>=5&&m<=7?'summer':m>=8&&m<=10?'autumn':'winter',day=hr>=7&&hr<18,dusk=(hr>=18&&hr<20)||(hr>=5&&hr<7),
- sk=day?['#8fd3ff','#e8f7ff']:dusk?['#f6a07a','#ffd9a8']:['#14193a','#2d3a6b'],lf={spring:'#7fd36b',summer:'#3fae56',autumn:'#e08a3c',winter:'#cfe3ea'}[se],
- nt=c.health?Math.min(10,1+Math.floor(c.health/2)):0,nb=c.learning?Math.min(4,1+Math.floor(c.learning/3)):0,nf=c.fitness?Math.min(6,1+Math.floor(c.fitness/3)):0,ns=Math.min(10,c.rest),nfl=Math.min(12,c.other),p=dayPct(today());
- let g='';const sp=[[40,20],[90,34],[150,16],[210,30],[260,18],[290,44],[120,50],[60,52],[230,52],[180,44]];
- for(let i=0;i<ns;i++)g+=`<circle cx="${sp[i][0]}" cy="${sp[i][1]}" r="2" fill="${day?'#ffd76a':'#fff'}" opacity=".85"/>`;
- g+=day||dusk?`<circle onclick="wt('sun')" cx="278" cy="34" r="13" fill="#ffd76a"/>`:`<circle onclick="wt('sun')" cx="278" cy="34" r="12" fill="#fff7c9"/>`;
- if(tot>=60)g+=`<path d="M50 140Q160 10 270 140" fill="none" stroke="#ff7a7a" stroke-width="3" opacity=".45"/><path d="M58 140Q160 24 262 140" fill="none" stroke="#ffd166" stroke-width="3" opacity=".45"/><path d="M66 140Q160 38 254 140" fill="none" stroke="#6ee7b7" stroke-width="3" opacity=".45"/>`;
- if(!p||p<.5)g+=`<g class="cld" onclick="wt('cloud')"><ellipse cx="70" cy="40" rx="30" ry="9" fill="#fff" opacity=".7"/><ellipse cx="95" cy="34" rx="22" ry="8" fill="#fff" opacity=".7"/></g>`;
- g+=`<path d="M0 140Q80 118 160 138T320 130V190H0z" fill="${se==='winter'?'#e6f0f3':'#8fd16a'}"/><path d="M0 164Q100 150 200 162T320 158V190H0z" fill="${se==='winter'?'#d5e6ea':'#6fbd55'}"/>`;
- for(let i=0;i<nb;i++){const bh=26+(i%2)*10,x=190+i*32;g+=`<g onclick="wt('learning')"><rect x="${x}" y="${126-bh}" width="22" height="${bh}" rx="3" fill="#b79cff"/><path d="M${x-2} ${126-bh}l13-12 13 12z" fill="#7b5bd6"/><rect x="${x+8}" y="${134-bh}" width="6" height="8" rx="2" fill="#ffe28a"/></g>`}
- if(c.rest)g+=`<ellipse onclick="wt('rest')" cx="100" cy="178" rx="${18+Math.min(20,c.rest*2)}" ry="6" fill="#6ec6ff" opacity=".85"/>`;
- for(let i=0;i<nt;i++){const x=22+i*30,y=146+(i%2)*10,r=11+(i*7)%5;g+=`<g onclick="wt('health')"><rect x="${x-2}" y="${y-6}" width="4" height="12" fill="#8a5a3c"/><circle cx="${x}" cy="${y-12}" r="${r}" fill="${lf}"/><circle cx="${x+5}" cy="${y-8}" r="${r*.7}" fill="${lf}" opacity=".85"/></g>`}
- for(let i=0;i<nf;i++){const x=30+i*46;g+=`<g onclick="wt('fitness')"><rect x="${x}" y="156" width="2.5" height="20" fill="#7a6a5a"/><path d="M${x+2.5} 157h14l-4 5 4 5h-14z" fill="#ef6a55"/></g>`}
- for(let i=0;i<nfl;i++){const x=14+i*26;g+=`<circle onclick="wt('other')" cx="${x}" cy="184" r="3.5" fill="${['#ff9ecb','#ffd166','#fff'][i%3]}"/>`}
- if(!tot)g+=`<g onclick="wt('seed')"><path d="M160 162v-14" stroke="#3fae56" stroke-width="3"/><path d="M160 150q-12-2-14-12 12 0 14 12z" fill="${lf}"/><path d="M160 152q12-2 14-12-12 0-14 12z" fill="${lf}"/></g>`;
- if(tot>=25)for(let i=0;i<5;i++)g+=`<circle class="ff" cx="${50+i*55}" cy="${120+(i%2)*25}" r="2.5" fill="#fff59d" style="animation-delay:${i*.6}s"/>`;
- if(se==='winter'||se==='autumn')for(let i=0;i<7;i++)g+=`<circle class="fall" cx="${20+i*45}" cy="0" r="${se==='winter'?2:3}" fill="${se==='winter'?'#fff':'#e08a3c'}" style="animation-delay:${i*-1}s"/>`;
- (tot?CY().b:[]).filter(b=>b.k!=='road').slice(0,8).forEach((b,i)=>g+=`<text onclick="wt('city')" x="${14+i*36}" y="136" font-size="20">${BK(b.k)[1]}</text>`);
- return `<svg viewBox="0 0 320 190" role="img" aria-label="Your world: ${tot} completions, ${se}"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sk[0]}"/><stop offset="1" stop-color="${sk[1]}"/></linearGradient></defs><rect width="320" height="190" fill="url(#sky)"/>${g}</svg>`}
+ sk=day?['#8fd3ff','#e8f7ff']:dusk?['#f6a07a','#ffd9a8']:['#14193a','#2d3a6b'];
+ let g='';
+ if(!day&&!dusk)for(let i=0;i<9;i++)g+=`<circle cx="${18+i*37}" cy="${12+(i*17)%48}" r="1.4" fill="#fff" opacity=".8"/>`;
+ g+=day||dusk?`<circle cx="278" cy="29" r="11" fill="#ffd76a"/>`:`<circle cx="278" cy="29" r="10" fill="#fff7c9"/>`;
+ if(!tot||!CY().b.length)g+=`<g class="cld"><ellipse cx="70" cy="38" rx="25" ry="8" fill="#fff" opacity=".7"/><ellipse cx="91" cy="33" rx="18" ry="7" fill="#fff" opacity=".7"/></g>`;
+ g+=`<path d="M0 105Q80 89 160 104T320 98V190H0z" fill="${se==='winter'?'#e6f0f3':'#8fd16a'}"/><path d="M0 148Q100 136 200 147T320 143V190H0z" fill="${se==='winter'?'#d5e6ea':'#6fbd55'}"/>`;
+ // Render the same saved city coordinates as the builder, compacted into an isometric mini-map.
+ // Every building/road appears at the corresponding x/y tile; nothing is invented from habit totals.
+ const tile=(x,y)=>({x:160+(x-y)*7.2,y:83+(x+y)*3.15});
+ const e=eraI(),w=8+2*e,h=4+2*e,x0=(GW-w)>>1,y0=(GH-h)>>1;
+ for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(x>=x0&&x<x0+w&&y>=y0&&y<y0+h){
+   const q=tile(x,y),a=tile(x+1,y),b=tile(x+1,y+1),d=tile(x,y+1);
+   g+=`<polygon points="${q.x},${q.y} ${a.x},${a.y} ${b.x},${b.y} ${d.x},${d.y}" fill="${(x+y)%2?'#8fd16a':'#7fc65d'}" stroke="#ffffff" stroke-opacity=".18" stroke-width=".5"/>`;
+ }
+ (tot?CY().b:[]).slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(b=>{
+   const q=tile(b.x,b.y),d=BK(b.k);if(!d)return;
+   if(b.k==='road'){
+     g+=`<polygon points="${q.x},${q.y-3} ${q.x+7.2},${q.y} ${q.x},${q.y+3} ${q.x-7.2},${q.y}" fill="#6b7280" stroke="#dbe3ea" stroke-opacity=".55" stroke-width=".6"/><path d="M${q.x-3} ${q.y}l3 0" stroke="#f8fafc" stroke-width=".7"/>`;
+   }else{
+     const fs=b.k==='tree'?13: b.k==='tent'?10:12;
+     g+=`<ellipse cx="${q.x}" cy="${q.y+2.5}" rx="5.7" ry="2.1" fill="#233b2b" opacity=".22"/><text x="${q.x}" y="${q.y+2}" text-anchor="middle" dominant-baseline="middle" font-size="${fs+Math.min(3,(b.l-1)*1.5)}">${d[1]}</text>`;
+     if(b.l>1)g+=`<circle cx="${q.x+5}" cy="${q.y-4}" r="2" fill="#ffb703"/>`;
+   }
+ });
+ if(tot>=25)for(let i=0;i<5;i++)g+=`<circle class="ff" cx="${35+i*62}" cy="${122+(i%2)*18}" r="2" fill="#fff59d" style="animation-delay:${i*.6}s"/>`;
+ if(se==='winter'||se==='autumn')for(let i=0;i<6;i++)g+=`<circle class="fall" cx="${20+i*55}" cy="0" r="${se==='winter'?2:2.5}" fill="${se==='winter'?'#fff':'#e08a3c'}" style="animation-delay:${i*-1}s"/>`;
+ return `<svg viewBox="0 0 320 190" role="img" aria-label="Your world: ${tot} completions, ${se}"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sk[0]}"/><stop offset="1" stop-color="${sk[1]}"/></linearGradient></defs><rect width="320" height="190" fill="url(#sky)"/>${g}</svg>`
+}
 /* ===== City builder ===== */
 const ERAS=[['Camp',0],['Village',10],['Town',50],['City',250],['Metropolis',1000]];
 const BT=[['road','','Road',2,0,0,0],['tent','⛺','Tent',10,0,1,1],['tree','🌳','Garden',15,0,0,1],['house','🏠','House',30,1,3,2],['fount','⛲','Fountain',40,1,0,2],['lib','📚','Library',60,1,0,3],['gym','🏋️','Gym',80,2,0,4],['shop','🏪','Market',90,2,0,5],['school','🏫','School',140,2,2,5],['apt','🏢','Apartments',200,3,8,6],['clinic','🏥','Clinic',220,3,0,6],['fun','🎡','Fun park',300,3,0,8],['stad','🏟️','Stadium',450,4,0,10],['uni','🎓','University',500,4,0,12],['sky','🏙️','Skyscraper',600,4,20,14]];
