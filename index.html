@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pulse</title>
+<title>Pulse DEV</title>
 <meta name="theme-color" content="#0b1020">
 <meta name="description" content="Pulse - a satisfying habit tracker. Data stays on your device.">
 <link rel="manifest" href="manifest.webmanifest">
@@ -145,10 +145,10 @@ const fmt=x=>String(r3(x));
 const dk=d=>{const z=new Date(d);return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0')};
 const addD=(k,n)=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+n);return dk(d)};
 const today=()=>dk(new Date());
-let S;try{S=JSON.parse(localStorage.getItem('pulse1'))}catch(e){}
+let S;try{S=JSON.parse(localStorage.getItem('pulse1-dev'))}catch(e){}
 S=S||{habits:[],days:{},awards:{},xp:0,set:{sound:true,reduce:false,theme:'auto'}};
 let fp=null,fpPushed=false,tab='home',undo=null,sel=today(),popId=null,enter=true,dir=0,busy=0;const PV={};
-function save(){try{localStorage.setItem('pulse1',JSON.stringify(S))}catch(e){}}
+function save(){try{localStorage.setItem('pulse1-dev',JSON.stringify(S))}catch(e){}}
 const sched=(h,k)=>!h.paused&&!h.archived&&k>=h.start&&(h.once?k===h.once:h.days.includes(new Date(k+'T12:00:00').getDay()));
 const val=(h,k)=>(S.days[k]&&S.days[k][h.id])?S.days[k][h.id].v:0;
 const tgt=(h,k)=>(S.days[k]&&S.days[k][h.id])?S.days[k][h.id].t:h.g;
@@ -207,8 +207,9 @@ window.clean=id=>{const h=H(id),e=S.days[sel]&&S.days[sel][id];if(!e)log(h,0);el
 const wk=k=>{const d=new Date(k+'T12:00:00');return addD(k,-((d.getDay()+6)%7))};
 function wstats(){const c={health:0,learning:0,fitness:0,rest:0,other:0};let tot=0;
  for(const k in S.days)for(const id in S.days[k]){const h=H(id);if(h&&ok(h,k)){c[h.cat||'health']++;tot++}}
+ {const dv=(S.dev&&S.dev.c)||{};for(const k in dv)if(k in c){c[k]+=dv[k];tot+=dv[k]}}
  return{c,tot}}
-function skyInfo(){const m=new Date().getMonth(),hr=new Date().getHours(),se=m>=2&&m<=4?'spring':m>=5&&m<=7?'summer':m>=8&&m<=10?'autumn':'winter',day=hr>=7&&hr<18,dusk=(hr>=18&&hr<20)||(hr>=5&&hr<7);
+function skyInfo(){const o=S.dev||{},m=o.month!=null?o.month:new Date().getMonth(),hr=o.hour!=null?o.hour:new Date().getHours(),se=m>=2&&m<=4?'spring':m>=5&&m<=7?'summer':m>=8&&m<=10?'autumn':'winter',day=hr>=7&&hr<18,dusk=(hr>=18&&hr<20)||(hr>=5&&hr<7);
  return{se,day,dusk,night:!day&&!dusk,sk:day?['#8fd3ff','#e8f7ff']:dusk?['#f6a07a','#ffd9a8']:['#14193a','#2d3a6b']}}
 function scene(){
  const{tot}=wstats(),{se,day,dusk,sk}=skyInfo(),bx=landBox(),ar=190/320;let w=bx.w,h=bx.h;if(h/w<ar)h=w*ar;else w=h/ar;
@@ -600,4 +601,49 @@ setInterval(()=>{const e=document.querySelector('.tm');if(e&&S.timer){const t=Ma
 addEventListener('contextmenu',e=>{if(!/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))e.preventDefault()});
 render();sweepRand();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-</script></body></html>
+</script><script>
+/* ===== DEV TOOLS (dev build only) ===== */
+(function(){
+const CATK=['health','fitness','learning','rest','other'],DV=()=>{S.dev=S.dev||{};S.dev.c=S.dev.c||{};return S.dev};
+const num=v=>Math.max(0,Math.floor(+v)||0),F=n=>n.toLocaleString();
+function refresh(){save();try{eraCheck()}catch(e){}try{render()}catch(e){}try{if($('#csv'))cr()}catch(e){}if($('#devp'))panel()}
+window.dvC=(cat,n)=>{const d=DV(),ks=cat==='all'?CATK:[cat],s=Math.sign(n),a=Math.abs(n),per=Math.floor(a/ks.length),rem=a%ks.length;
+ ks.forEach((k,i)=>{d.c[k]=(d.c[k]||0)+s*(per+(i<rem?1:0))});
+ const w=wstats().c;ks.forEach(k=>{if(w[k]<0)d.c[k]-=w[k]});refresh()};
+window.dvM=(m,n)=>{(m==='all'?MK:[m]).forEach(x=>addG(x,n));refresh()};
+window.dvEra=i=>{const need=ERAS[i][1]-wstats().tot;if(need!==0)dvC('all',need);else refresh()};
+window.dvSet=(k,v)=>{const d=DV();if(v==null)delete d[k];else d[k]=v;refresh()};
+window.dvTod=t=>dvSet('hour',t==null?null:{day:12,dusk:19,night:23}[t]);
+window.dvSea=t=>dvSet('month',t==null?null:{spring:3,summer:6,autumn:9,winter:0}[t]);
+window.dvProd=f=>{CY().b.forEach(b=>b.t=f?Date.now()-8*36e5:Date.now());refresh()};
+window.dvLvl=()=>{CY().b.forEach(b=>b.l=3);refresh()};
+window.dvClear=()=>{if(confirm('Remove all buildings?')){CY().b=[];refresh()}};
+window.dvReset=()=>{S.dev={c:{}};CY().gt={};CY().sp={};refresh()};
+window.dvImp=()=>{try{const r=localStorage.getItem('pulse1');if(!r){alert('No data from the live app found in this browser/origin.');return}if(confirm('Replace dev data with a copy of the live app data?')){S=JSON.parse(r);save();location.reload()}}catch(e){alert('Could not read live data: '+e)}};
+window.dvClose=()=>{const p=$('#devp');p&&p.remove()};
+function panel(){const keep=$('#devp .sheet'),sc=keep?keep.scrollTop:0,cat=($('#dvcat')||{}).value||'all',amt=($('#dvn')||{}).value||'100';dvClose();
+ const w=wstats(),d=DV(),bonus=Object.values(d.c).reduce((a,b)=>a+b,0),bl=bal(),era=eraI(),ch=(l,f,st)=>`<button class="chip" style="${st||''}" onclick="${f}">${l}</button>`,
+  q=[1,10,100,1000,10000],on=(k,v)=>d[k]===v?'background:#7CFC00;color:#000':'';
+ const el=document.createElement('div');el.id='devp';el.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center';
+ el.onclick=e=>{if(e.target===el)dvClose()};
+ el.innerHTML=`<div class="sheet" style="max-height:90vh;overflow:auto;width:min(560px,100%)"><div class="row"><h3 class="sp" style="margin:0">🛠 Dev tools</h3>${ch('Close','dvClose()')}</div>
+ <p class="mut">Completions <b>${F(w.tot)}</b> (${F(bonus)} dev bonus) · ${ERAS[era][0]} · ${CY().b.filter(b=>b.k!=='road').length} buildings · pop ${F(popu())}<br>Dev build stores data separately from the live app.</p>
+ <h4>Completions</h4>
+ <div class="row" style="gap:8px"><select id="dvcat" style="flex:1"><option value="all">All categories</option>${CATK.map(k=>`<option value="${k}" ${cat===k?'selected':''}>${(CATS.find(c=>c[0]===k)||[k,k])[1]} → ${MAT[CM[k]][0]}</option>`).join('')}</select><input id="dvn" type="number" min="0" value="${amt}" style="width:96px"></div>
+ <div class="chips" style="margin-top:8px">${ch('+ Add','dvC($(\'#dvcat\').value,num($(\'#dvn\').value))','font-weight:700')}${ch('− Remove','dvC($(\'#dvcat\').value,-num($(\'#dvn\').value))')}${q.map(n=>ch('+'+F(n),`dvC($('#dvcat').value,${n})`)).join('')}</div>
+ <p class="mut" style="margin:8px 0 4px">Jump to era (adds/removes dev bonus):</p><div class="chips">${ERAS.map((e,i)=>ch(e[0]+' ('+F(e[1])+')',`dvEra(${i})`,i===era?'background:#7CFC00;color:#000':'')).join('')}</div>
+ <h4>Materials <span class="mut">(every 5 completions of a category = 5 of its material)</span></h4>
+ ${MK.map(m=>`<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:6px"><span class="sp"><b>${MAT[m][0]} ${MAT[m][1]}</b> ${F(bl[m])}</span>${[10,100,1000,10000].map(n=>ch('+'+F(n),`dvM('${m}',${n})`)).join('')}${ch('−100',`dvM('${m}',-100)`)}</div>`).join('')}
+ <div class="chips">${ch('Max all (+99,999 each)',"dvM('all',99999)",'font-weight:700')}${ch('+1,000 all',"dvM('all',1000)")}</div>
+ <h4>World</h4><div class="chips">${ch('Fill production (8h)','dvProd(1)')}${ch('Empty production','dvProd(0)')}${ch('Level all buildings to 3','dvLvl()')}${ch('Remove all buildings','dvClear()','color:var(--coral)')}</div>
+ <p class="mut" style="margin:8px 0 4px">Time of day:</p><div class="chips">${ch('Auto','dvTod(null)',d.hour==null?'background:#7CFC00;color:#000':'')}${ch('☀️ Day','dvTod("day")',on('hour',12))}${ch('🌇 Dusk','dvTod("dusk")',on('hour',19))}${ch('🌙 Night','dvTod("night")',on('hour',23))}</div>
+ <p class="mut" style="margin:8px 0 4px">Season:</p><div class="chips">${ch('Auto','dvSea(null)',d.month==null?'background:#7CFC00;color:#000':'')}${ch('🌱 Spring','dvSea("spring")',on('month',3))}${ch('☀️ Summer','dvSea("summer")',on('month',6))}${ch('🍂 Autumn','dvSea("autumn")',on('month',9))}${ch('❄️ Winter','dvSea("winter")',on('month',0))}</div>
+ <h4>Data</h4><div class="chips">${ch('Reset dev bonuses &amp; material grants','dvReset()')}${ch('Copy data from live app','dvImp()')}${ch('Delete all dev data','wipe()','color:var(--coral)')}</div></div>`;
+ document.body.appendChild(el);const s=el.querySelector('.sheet');s.scrollTop=sc;s.style.animation='none'}
+window.num=num;
+const b=document.createElement('button');b.id='devb';b.textContent='🛠 DEV';
+b.style.cssText='position:fixed;left:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);z-index:99999;background:#111;color:#7CFC00;border:1px solid #7CFC00;border-radius:999px;padding:6px 11px;font:700 11px/1 monospace;opacity:.9';
+b.onclick=panel;document.body.appendChild(b);window.devPanel=panel;
+})();
+</script>
+</body></html>
